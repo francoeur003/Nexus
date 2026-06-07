@@ -601,12 +601,14 @@ class SystemStatsModel: ObservableObject {
             let telemetry = ioDict("PowerTelemetryData")
             let telemetryBatteryMW = (telemetry["BatteryPower"] as? NSNumber)?.intValue ?? ioInt("BatteryPower")
             let telemetryInputMW = (telemetry["SystemPowerIn"] as? NSNumber)?.intValue ?? ioInt("SystemPowerIn")
-            let chrgWatts = telemetryBatteryMW > 0
+            let rawChrgWatts = telemetryBatteryMW > 0
                 ? Double(telemetryBatteryMW) / 1000.0
                 : batteryWattsFromCurrent
-            let inputWatts = telemetryInputMW > 0
+            let rawInputWatts = telemetryInputMW > 0
                 ? Double(telemetryInputMW) / 1000.0
-                : chrgWatts
+                : rawChrgWatts
+            let chrgWatts = onAC ? rawChrgWatts : 0
+            let inputWatts = onAC ? rawInputWatts : 0
 
             let health = desCap > 0 ? Int(Double(maxCapMAh) / Double(desCap) * 100) : 100
 
@@ -690,7 +692,9 @@ class SystemStatsModel: ObservableObject {
                 self.publishIfChanged(\.sysPower, nextSysPower, tolerance: 0.5)
                 self.publishIfChanged(\.totalPower, nextTotalPower, tolerance: 0.05)
                 self.chipPowerHistory = self.history(self.chipPowerHistory, adding: nextTotalPower)
-                let nextChargerInputWatts = chargerInputWatts > 0 ? chargerInputWatts : self.chargerInputWatts
+                let nextChargerInputWatts = self.batteryOnAC
+                    ? (chargerInputWatts > 0 ? chargerInputWatts : self.chargerInputWatts)
+                    : 0
                 self.publishIfChanged(\.chargerInputWatts, nextChargerInputWatts, tolerance: 0.05)
                 self.chargerInputHistory = self.history(self.chargerInputHistory, adding: max(0, nextChargerInputWatts))
 

@@ -265,8 +265,13 @@ struct NexusWidget: Widget {
     let kind = "NexusWidget"
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: StatsProvider()) { entry in
-            NexusWidgetView(entry: entry)
-                .containerBackground(.black, for: .widget)
+            if #available(macOSApplicationExtension 14.0, *) {
+                NexusWidgetView(entry: entry)
+                    .containerBackground(.black, for: .widget)
+            } else {
+                NexusWidgetView(entry: entry)
+                    .background(Color.black)
+            }
         }
         .configurationDisplayName("Nexus")
         .description("实时查看处理器与内存状态，可独立运行")

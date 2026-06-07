@@ -88,7 +88,22 @@ xattr -rd com.apple.quarantine "$INSTALL_DIR/$APP_NAME.app" 2>/dev/null || true
 rm -rf "$TMP_DIR"
 ok "Installed to $INSTALL_DIR/$APP_NAME.app"
 
-# ── 5. Launch ────────────────────────────────────────────────────────────────
+# ── 5. Install bundled helper ────────────────────────────────────────────────
+HELPER_SRC="$INSTALL_DIR/$APP_NAME.app/Contents/MacOS/nexus-helper"
+HELPER_DIR="/Users/Shared/Nexus"
+HELPER_DST="$HELPER_DIR/nexus-helper"
+
+if [ -x "$HELPER_SRC" ]; then
+    step "Installing bundled sensor helper..."
+    sudo /bin/mkdir -p "$HELPER_DIR"
+    sudo /bin/cp "$HELPER_SRC" "$HELPER_DST"
+    sudo /bin/chmod 755 "$HELPER_DST"
+    ok "Sensor helper installed"
+else
+    warn "Sensor helper is missing from the app bundle. Basic metrics will still work."
+fi
+
+# ── 6. Launch ────────────────────────────────────────────────────────────────
 step "Launching Nexus..."
 open "$INSTALL_DIR/$APP_NAME.app"
 
@@ -97,10 +112,7 @@ echo ""
 echo -e "  ${G}${BOLD}All done!${NC}"
 echo ""
 echo -e "  Nexus is now running in your menu bar."
-echo -e "  ${D}Look for the 🟢 indicator at the top right of your screen.${NC}"
-echo ""
-echo -e "  ${D}To add the desktop widget:${NC}"
-echo -e "  ${D}Right-click your desktop → Edit Widgets → Nexus${NC}"
+echo -e "  ${D}Look for the Nexus status tile at the top right of your screen.${NC}"
 echo ""
 echo -e "  ${D}To launch automatically on login:${NC}"
 echo -e "  ${D}System Settings → General → Login Items → add Nexus${NC}"

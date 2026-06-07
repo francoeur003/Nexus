@@ -42,10 +42,15 @@ battery, country, and Codex quota — packed into a compact macOS menu-bar panel
 - **Fan context**: current fan speed, likely workload causes, and stop advice.
 - **Network context**: current network speed and country display.
 - **Native sensors**: reads macOS / Apple Silicon telemetry through SMC, IOReport, IOKit, and system APIs.
+- **Desktop widget**: WidgetKit extension for macOS 14+ desktop and notification-center widgets.
 
 ## Install
 
 Download the latest DMG from [Releases](../../releases/latest), drag `Nexus.app` into Applications, then launch it once.
+
+The release DMG is a normal macOS drag-to-Applications installer. All runtime
+files are bundled in `Nexus.app`; users do not need to keep a separate ZIP
+folder, cache folder, or config folder beside the app.
 
 One-line installer:
 

@@ -49,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Menu bar
 
     private func setupMenuBar() {
-        statusItem = NSStatusBar.system.statusItem(withLength: 26)
+        statusItem = NSStatusBar.system.statusItem(withLength: 30)
         if let btn = statusItem?.button {
             btn.title = ""
             btn.image = statusIcon(cpu: 0, gpu: 0, storage: 0)
@@ -81,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func statusIcon(cpu: Int, gpu: Int, storage: Int) -> NSImage {
-        let size = NSSize(width: 22, height: 22)
+        let size = NSSize(width: 24, height: 24)
         let image = NSImage(size: size)
         image.lockFocus()
 
@@ -93,9 +93,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         bg.lineWidth = 0.7
         bg.stroke()
 
-        drawStackedMetric(label: "C", value: cpu, color: NSColor.systemGreen, y: 14.8)
-        drawStackedMetric(label: "G", value: gpu, color: NSColor.systemOrange, y: 9.2)
-        drawStackedMetric(label: "S", value: storage, color: NSColor.systemPurple, y: 3.6)
+        drawStackedMetric(label: "C", value: cpu, color: NSColor.systemGreen, y: 16.2)
+        drawStackedMetric(label: "G", value: gpu, color: NSColor.systemOrange, y: 10.1)
+        drawStackedMetric(label: "S", value: storage, color: NSColor.systemPurple, y: 4.0)
 
         image.unlockFocus()
         image.isTemplate = false
@@ -105,12 +105,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func drawStackedMetric(label: String, value: Int, color: NSColor, y: CGFloat) {
         let pct = max(0, min(value, 100))
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedSystemFont(ofSize: 5.8, weight: .bold),
+            .font: NSFont.monospacedSystemFont(ofSize: 6.2, weight: .bold),
             .foregroundColor: NSColor(calibratedWhite: 0.10, alpha: 0.88)
         ]
-        label.draw(at: NSPoint(x: 3.8, y: y - 1.4), withAttributes: attrs)
+        label.draw(at: NSPoint(x: 4.0, y: y - 1.5), withAttributes: attrs)
 
-        let track = NSRect(x: 10.0, y: y + 0.2, width: 8.9, height: 2.35)
+        let track = NSRect(x: 11.0, y: y + 0.2, width: 9.8, height: 2.5)
         NSColor(calibratedWhite: 0.0, alpha: 0.11).setFill()
         NSBezierPath(roundedRect: track, xRadius: 1.2, yRadius: 1.2).fill()
 

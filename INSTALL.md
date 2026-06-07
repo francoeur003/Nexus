@@ -7,10 +7,15 @@ Nexus is a native Apple Silicon menu-bar monitor for Hermes Agent and Codex work
 - macOS 13 Ventura or later
 - Apple Silicon Mac
 - Admin approval once if you want full power and temperature sampling
+- macOS 14 Sonoma or later if you want to add the desktop WidgetKit widget
 
 ## Recommended Install
 
 Download the newest DMG from [Releases](../../releases/latest), open it, and drag `Nexus.app` into Applications.
+
+The DMG is a standard drag-to-Applications package. There is no separate ZIP
+folder to unpack, and no extra configuration or cache folder to copy by hand.
+The sensor helper is bundled inside `Nexus.app`.
 
 If macOS blocks first launch:
 
@@ -34,9 +39,10 @@ brew tap francoeur003/nexus https://github.com/francoeur003/Nexus
 brew install --cask nexus
 ```
 
-## Helper
+## Sensor Helper
 
-Nexus ships a tiny native helper named `nexus-helper`. It is copied to:
+Nexus ships a tiny native helper named `nexus-helper` inside the app bundle.
+The one-line installer and Homebrew cask copy it to:
 
 ```text
 /Users/Shared/Nexus/nexus-helper
@@ -60,5 +66,5 @@ rm -rf ~/Library/Caches/com.francoeur003.Nexus
 
 - If the menu-bar icon does not appear, launch `Nexus.app` from Applications again.
 - If charts are empty at first launch, wait a few seconds for the first sampling window.
-- If power or fan data is missing, run `Install.command` from the DMG once.
+- If power or fan data is missing after manual drag installation, use the one-line installer or Homebrew cask so the bundled helper is copied into place.
 - If Codex quota is unavailable, make sure Codex Desktop is signed in locally.

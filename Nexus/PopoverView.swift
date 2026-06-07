@@ -103,7 +103,7 @@ private struct HelperMissingBanner: View {
                 Text("系统辅助程序未安装")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Color(hex: "FF9F0A"))
-                Text("请运行 DMG 里的 Install.command，以启用图形处理器、温度和功耗数据。")
+                Text("请使用一键安装命令或 Homebrew 重新安装，以启用图形、温度和功耗数据。")
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "888899"))
                     .fixedSize(horizontal: false, vertical: true)
@@ -467,7 +467,7 @@ private struct PowerTrendCard: View {
                 .foregroundColor(color.opacity(0.86))
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
-            PowerTrendChart(values: history, color: color)
+            PowerTrendChart(values: history, currentValue: value, color: color)
                 .frame(height: 29)
         }
         .padding(.horizontal, 8)
@@ -478,11 +478,25 @@ private struct PowerTrendCard: View {
 
 private struct PowerTrendChart: View {
     let values: [Double]
+    let currentValue: Double
     let color: Color
 
     private var samples: [Double] {
-        let cleaned = values.map { max(0, $0) }
+        var cleaned = values.map { max(0, $0) }
+        if cleaned.isEmpty {
+            cleaned = [0, max(0, currentValue)]
+        } else {
+            cleaned[cleaned.count - 1] = max(0, currentValue)
+        }
         return cleaned.count >= 2 ? cleaned : [0, 0]
+    }
+
+    private func chartUpperBound(for maxSample: Double) -> Double {
+        let padded = maxSample * 1.15
+        if padded <= 30 { return 30 }
+        if padded <= 60 { return ceil(padded / 10) * 10 }
+        if padded <= 120 { return ceil(padded / 20) * 20 }
+        return ceil(padded / 50) * 50
     }
 
     private func smoothLinePath(points: [CGPoint]) -> Path {
@@ -524,7 +538,7 @@ private struct PowerTrendChart: View {
             let chartW = max(1, geo.size.width - leftInset - rightInset)
             let chartH = max(1, geo.size.height - topInset - bottomInset)
             let data = samples
-            let maxValue = Swift.max(30, ceil((data.max() ?? 1) / 10) * 10)
+            let maxValue = chartUpperBound(for: data.max() ?? 1)
             let tickValues = [maxValue, maxValue * 2 / 3, maxValue / 3, 0]
             let points = data.enumerated().map { index, value in
                 CGPoint(x: leftInset + chartW * CGFloat(index) / CGFloat(max(data.count - 1, 1)),

@@ -17,24 +17,23 @@ struct PopoverView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 0) {
+            VStack(spacing: DashboardStyle.outerSpacing) {
                 Header(snapshot: snapshot)
                 if snapshot.helperMissing {
                     HelperMissingBanner()
                 }
-                sep
                 CompactStatusSection(snapshot: snapshot.compact)
                     .equatable()
-                Color.clear.frame(height: 10)
-                sep
-                FooterBar(model: model)
             }
+            .padding(.horizontal, DashboardStyle.contentPaddingX)
+            .padding(.top, DashboardStyle.contentPaddingTop)
+            .padding(.bottom, DashboardStyle.contentPaddingBottom)
         }
-        .frame(width: 280)
+        .frame(width: DashboardStyle.popoverWidth)
         .background {
             ZStack {
                 FrostedBackground()
-                Color.white.opacity(0.62)
+                DashboardStyle.pageFill
             }
         }
         .onReceive(uiTimer) { _ in
@@ -91,6 +90,135 @@ private struct FrostedBackground: NSViewRepresentable {
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
+enum DashboardStyle {
+    static let popoverWidth: CGFloat = 280
+    static let popoverHeight: CGFloat = 560
+    static let outerSpacing: CGFloat = 6
+    static let contentPaddingX: CGFloat = 10
+    static let contentPaddingTop: CGFloat = 8
+    static let contentPaddingBottom: CGFloat = 4
+
+    static let panelRadius: CGFloat = 16
+    static let tileRadius: CGFloat = 12
+    static let compactRadius: CGFloat = 10
+    static let sectionSpacing: CGFloat = 7
+    static let tileSpacing: CGFloat = 6
+    static let headerSpacing: CGFloat = 4
+    static let panelPaddingX: CGFloat = 8
+    static let panelPaddingY: CGFloat = 7
+    static let densePanelPaddingY: CGFloat = 5
+    static let systemStackSpacing: CGFloat = 3
+    static let metricTilePaddingX: CGFloat = 6
+    static let metricTilePaddingY: CGFloat = 2
+    static let topCardHeight: CGFloat = 50
+    static let headerChipHeight: CGFloat = 22
+    static let statusPillHeight: CGFloat = 31
+    static let primaryMetricHeight: CGFloat = 60
+    static let secondaryMetricHeight: CGFloat = 21
+    static let wifiMetricHeight: CGFloat = 32
+    static let usageBarHeight: CGFloat = 6
+    static let usageBarRadius: CGFloat = 4
+    static let temperatureBandHeight: CGFloat = 17
+    static let panelHeaderHeight: CGFloat = 20
+    static let panelIconSize: CGFloat = 19
+    static let heroIconWidth: CGFloat = 26
+    static let heroIconHeight: CGFloat = 28
+    static let statusDotSize: CGFloat = 8
+    static let topCardPadding: CGFloat = 7
+    static let topCardIconSize: CGFloat = 30
+    static let statusPrimaryIconSize: CGFloat = 20
+    static let statusSecondaryIconSize: CGFloat = 17
+    static let statusNetWidth: CGFloat = 74
+    static let statusBatteryWidth: CGFloat = 58
+    static let metricIconWidth: CGFloat = 10
+    static let primaryMetricIconWidth: CGFloat = 11
+    static let sparklineHeight: CGFloat = 31
+    static let secondaryMetricIconWidth: CGFloat = 11
+    static let fanReasonIndexSize: CGFloat = 16
+    static let fanReasonRowHeight: CGFloat = 25
+    static let fanReasonProgressWidth: CGFloat = 44
+    static let fanReasonProgressHeight: CGFloat = 4
+    static let fanReasonPercentWidth: CGFloat = 26
+
+    static let accentBlue = Color(hex: "2563EB")
+    static let accentGreen = Color(hex: "18A957")
+    static let accentPurple = Color(hex: "8C35F2")
+    static let accentOrange = Color(hex: "F59E0B")
+    static let accentCoral = Color(hex: "FF4B11")
+    static let accentRed = Color(hex: "DC2626")
+    static let accentYellow = Color(hex: "FFD60A")
+
+    static let pageFill = Color(hex: "F8FBFF").opacity(0.92)
+    static let panelFill = Color.white.opacity(0.86)
+    static let tileFill = Color.white.opacity(0.74)
+    static let raisedTileFill = Color.white.opacity(0.78)
+    static let panelStroke = Color(hex: "DDE5F1").opacity(0.92)
+    static let tileStroke = Color(hex: "E3E9F3")
+    static let titleText = Color(hex: "111827")
+    static let bodyText = Color(hex: "17213A")
+    static let secondaryText = Color(hex: "5D6B88")
+    static let mutedText = Color(hex: "94A3B8")
+    static let track = Color(hex: "E7ECF5")
+    static let shadow = Color(hex: "23314F").opacity(0.08)
+    static let softBlueFill = Color(hex: "EAF1FF")
+    static let successText = Color(hex: "15803D")
+    static let warningText = Color(hex: "B45309")
+    static let codexGreen = Color(hex: "12B765")
+    static let usageBlue = Color(hex: "3E8FD8")
+    static let usageTeal = Color(hex: "52A8B8")
+    static let usageViolet = Color(hex: "6B7FE8")
+    static let quotaWarning = Color(hex: "F05A24")
+    static let quotaHealthy = Color(hex: "16A34A")
+    static let brandGradient = LinearGradient(colors: [Color(hex: "6D6BFF"), Color(hex: "A829F4")],
+                                              startPoint: .topLeading,
+                                              endPoint: .bottomTrailing)
+    static let usageNormalGradient = LinearGradient(colors: [accentBlue.opacity(0.68), accentBlue.opacity(0.82), accentGreen.opacity(0.72)],
+                                                    startPoint: .leading,
+                                                    endPoint: .trailing)
+    static let usageWarningGradient = LinearGradient(colors: [accentOrange, Color(hex: "F97316")],
+                                                     startPoint: .leading,
+                                                     endPoint: .trailing)
+    static let usageDangerGradient = LinearGradient(colors: [accentRed, Color(hex: "F97316")],
+                                                    startPoint: .leading,
+                                                    endPoint: .trailing)
+
+    static let heroTitleFont = Font.system(size: 25, weight: .heavy)
+    static let heroIconFont = Font.system(size: 20, weight: .heavy)
+    static let headerMetaFont = Font.system(size: 12, weight: .semibold)
+    static let headerMetaMonoFont = Font.system(size: 12, weight: .semibold, design: .monospaced)
+    static let headerChipIconFont = Font.system(size: 8.8, weight: .bold)
+    static let headerChipTitleFont = Font.system(size: 8.5, weight: .bold)
+    static let headerChipCompactFont = Font.system(size: 7.4, weight: .heavy, design: .rounded)
+    static let panelTitleFont = Font.system(size: 12.8, weight: .bold)
+    static let panelIconFont = Font.system(size: 10, weight: .bold)
+    static let wifiTitleFont = Font.system(size: 13, weight: .bold)
+    static let wifiLinkArrowFont = Font.system(size: 7.5, weight: .heavy)
+    static let topCardTitleFont = Font.system(size: 13, weight: .bold, design: .rounded)
+    static let topCardIconFont = Font.system(size: 15, weight: .bold)
+    static let topCardCaptionFont = Font.system(size: 8, weight: .semibold)
+    static let quotaRingFont = Font.system(size: 8.5, weight: .heavy, design: .rounded)
+    static let badgeFont = Font.system(size: 7.5, weight: .bold)
+    static let tinyLabelFont = Font.system(size: 7.5, weight: .bold)
+    static let smallLabelFont = Font.system(size: 8.5, weight: .bold)
+    static let smallValueFont = Font.system(size: 9.2, weight: .heavy, design: .rounded)
+    static let mediumValueFont = Font.system(size: 11, weight: .heavy, design: .rounded)
+    static let primaryValueFont = Font.system(size: 12.8, weight: .heavy, design: .rounded)
+    static let secondaryValueFont = Font.system(size: 9, weight: .heavy, design: .rounded)
+    static let usagePercentFont = Font.system(size: 12, weight: .heavy, design: .rounded)
+    static let usageDetailFont = Font.system(size: 8, weight: .bold)
+    static let metricIconFont = Font.system(size: 8, weight: .bold)
+    static let statusPrimaryIconFont = Font.system(size: 10, weight: .bold)
+    static let statusSecondaryIconFont = Font.system(size: 8.5, weight: .bold)
+    static let primaryMetricIconFont = Font.system(size: 10, weight: .bold)
+    static let secondaryMetricIconFont = Font.system(size: 8.5, weight: .bold)
+    static let axisLabelFont = Font.system(size: 5.8, weight: .semibold, design: .rounded)
+    static let microTextFont = Font.system(size: 8.5, weight: .semibold)
+    static let fanReasonFont = Font.system(size: 9.1, weight: .medium)
+    static let fanAdviceFont = Font.system(size: 9.2, weight: .semibold)
+    static let fanReasonIndexFont = Font.system(size: 10, weight: .semibold, design: .rounded)
+    static let monoSmallFont = Font.system(size: 8.5, weight: .semibold, design: .monospaced)
+}
+
 // MARK: - Helper missing banner
 
 private struct HelperMissingBanner: View {
@@ -120,37 +248,174 @@ private struct HelperMissingBanner: View {
 
 private struct Header: View {
     let snapshot: PopoverSnapshot
+    @ObservedObject private var recorder = RecordingController.shared
 
     var statusColor: Color {
-        snapshot.hermesUsageAvailable ? Color(hex: "30D158") : Color(hex: "FFD60A")
+        snapshot.hermesUsageAvailable ? DashboardStyle.accentGreen : DashboardStyle.accentYellow
+    }
+
+    private var audioTitle: String {
+        if recorder.isPreparing { return "准备" }
+        return recorder.isCallRecording ? "停止" : "监听"
+    }
+
+    private var audioIcon: String {
+        recorder.isCallRecording ? "stop.fill" : "mic.fill"
     }
 
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: DashboardStyle.headerSpacing) {
+            HStack(alignment: .center, spacing: 7) {
+                Image(systemName: "sparkle")
+                    .font(DashboardStyle.heroIconFont)
+                    .foregroundStyle(DashboardStyle.brandGradient)
+                    .frame(width: DashboardStyle.heroIconWidth,
+                           height: DashboardStyle.heroIconHeight)
+
                 Text("Hermes Agent")
-                    .font(.system(size: 23, weight: .semibold))
-                    .foregroundColor(Color(hex: "111827"))
-                HStack(spacing: 5) {
-                    Circle().fill(statusColor).frame(width: 8, height: 8)
-                    Text(snapshot.hermesTodayTokensText)
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                        .foregroundColor(statusColor)
-                    Text("·")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Color(hex: "94A3B8"))
-                    Text(snapshot.hermesTodayDurationText)
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                        .foregroundColor(Color(hex: "5D6B88"))
-                }
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                    .font(DashboardStyle.heroTitleFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .layoutPriority(1)
+
+                Spacer(minLength: 0)
             }
-            Spacer()
+
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: DashboardStyle.statusDotSize,
+                           height: DashboardStyle.statusDotSize)
+                Text("今日")
+                    .font(DashboardStyle.headerMetaFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                Text(snapshot.hermesTodayTokensText.replacingOccurrences(of: "今日 ", with: ""))
+                    .font(DashboardStyle.headerMetaMonoFont)
+                    .foregroundColor(statusColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .layoutPriority(1)
+                Text("·")
+                    .font(DashboardStyle.headerMetaFont)
+                    .foregroundColor(DashboardStyle.mutedText)
+                Text(snapshot.hermesTodayDurationText)
+                    .font(DashboardStyle.headerMetaMonoFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .layoutPriority(1)
+                Spacer(minLength: 4)
+                HeaderCountryChip(country: snapshot.compact.currentCountry)
+                HeaderActionButton(title: audioTitle,
+                                   systemImage: audioIcon,
+                                   tint: recorder.isCallRecording ? DashboardStyle.accentRed : DashboardStyle.accentGreen,
+                                   isDisabled: recorder.isPreparing) {
+                    recorder.toggleCallRecording()
+                }
+                .help("录制系统声音和麦克风，并打开 Hermes 会议翻译板")
+                HeaderActionButton(title: "录屏",
+                                   systemImage: "record.circle",
+                                   tint: DashboardStyle.accentBlue,
+                                   isDisabled: false) {
+                    recorder.openScreenRecorderPicker()
+                }
+                .help("打开区域录屏选择器")
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 9)
-        .padding(.bottom, 4)
+        .padding(.horizontal, 2)
+        .padding(.top, 1)
+        .padding(.bottom, 5)
+    }
+}
+
+private struct HeaderCountryChip: View {
+    let country: String
+
+    private var label: String {
+        let trimmed = country.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty || trimmed == "--" { return "国家" }
+        if trimmed.localizedCaseInsensitiveContains("united states") { return "美国" }
+        if trimmed.localizedCaseInsensitiveContains("china") { return "中国" }
+        if trimmed.count > 3 { return String(trimmed.prefix(3)) }
+        return trimmed
+    }
+
+    var body: some View {
+        HeaderUtilityChip(title: label,
+                          systemImage: "location.fill",
+                          tint: DashboardStyle.accentPurple,
+                          compactLabel: compactLabel,
+                          showsTitle: false)
+    }
+
+    private var compactLabel: String {
+        if label.hasPrefix("美") { return "美" }
+        if label.hasPrefix("中") { return "中" }
+        if label.hasPrefix("新") { return "新" }
+        return String(label.prefix(1))
+    }
+}
+
+private struct HeaderActionButton: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HeaderUtilityChip(title: title,
+                              systemImage: systemImage,
+                              tint: tint,
+                              isDisabled: isDisabled,
+                              showsTitle: false)
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.62 : 1)
+    }
+}
+
+private struct HeaderUtilityChip: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    var isDisabled = false
+    var compactLabel: String? = nil
+    var showsTitle = true
+
+    private var chipWidth: CGFloat {
+        showsTitle ? 38 : (compactLabel == nil ? 24 : 28)
+    }
+
+    var body: some View {
+        HStack(spacing: showsTitle ? 3 : 2) {
+            Image(systemName: systemImage)
+                .font(DashboardStyle.headerChipIconFont)
+                .foregroundColor(tint.opacity(isDisabled ? 0.55 : 1))
+            if showsTitle {
+                Text(title)
+                    .font(DashboardStyle.headerChipTitleFont)
+                    .foregroundColor(DashboardStyle.bodyText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+            } else if let compactLabel {
+                Text(compactLabel)
+                    .font(DashboardStyle.headerChipCompactFont)
+                    .foregroundColor(DashboardStyle.bodyText)
+                    .lineLimit(1)
+            }
+        }
+        .frame(width: chipWidth, height: DashboardStyle.headerChipHeight)
+        .background(
+            Capsule()
+                .fill(DashboardStyle.tileFill)
+                .overlay(Capsule().stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
     }
 }
 
@@ -159,14 +424,25 @@ private struct Header: View {
 private struct CompactStatusSnapshot: Equatable {
     let codexUsageAvailable: Bool
     let codexPlanType: String
+    let codexTodayTokens: Int64
     let codexTodayTokensText: String
     let codexFiveHourRemainingPct: Int
     let codexFiveHourResetText: String
     let codexWeeklyRemainingPct: Int
     let codexWeeklyResetText: String
+    let hermesUsageAvailable: Bool
+    let hermesTodayTokens: Int64
+    let hermesTodaySeconds: Double
+    let hermesTodayDurationText: String
+    let hermesTodayTokensHistory: [Double]
+    let hermesTodaySecondsHistory: [Double]
+    let hermesTokenRateHistory: [Double]
     let cpuUsage: Int
     let gpuUsage: Int
     let storagePctPrecise: Double
+    let cpuUsageHistory: [Double]
+    let gpuUsageHistory: [Double]
+    let storagePctHistory: [Double]
     let cpuTemp: Double
     let gpuTemp: Double
     let cpuDieHotspot: Double
@@ -179,24 +455,39 @@ private struct CompactStatusSnapshot: Equatable {
     let batteryCharged: Bool
     let chargerInputWatts: Double
     let totalPower: Double
+    let energyMeterPowerWatts: Double
+    let sampledEnergyKWh: Double
+    let energyMeterCycleDays: Int
     let chargerInputHistory: [Double]
     let chipPowerHistory: [Double]
     let netInBps: Int64
     let netOutBps: Int64
     let currentCountry: String
     let batteryPct: Int
+    let pocketWiFiStatus: PocketWiFiStatus
 
     init(_ model: SystemStatsModel) {
         codexUsageAvailable = model.codexUsageAvailable
         codexPlanType = model.codexPlanType
+        codexTodayTokens = model.codexTodayTokens
         codexTodayTokensText = model.codexTodayTokensText
         codexFiveHourRemainingPct = model.codexFiveHourRemainingPct
         codexFiveHourResetText = model.codexFiveHourResetText
         codexWeeklyRemainingPct = model.codexWeeklyRemainingPct
         codexWeeklyResetText = model.codexWeeklyResetText
+        hermesUsageAvailable = model.hermesUsageAvailable
+        hermesTodayTokens = model.hermesTodayTokens
+        hermesTodaySeconds = model.hermesTodaySeconds
+        hermesTodayDurationText = model.hermesTodayDurationText
+        hermesTodayTokensHistory = Self.chartSamples(model.hermesTodayTokensHistory)
+        hermesTodaySecondsHistory = Self.chartSamples(model.hermesTodaySecondsHistory)
+        hermesTokenRateHistory = Self.chartSamples(model.hermesTokenRateHistory)
         cpuUsage = model.cpuUsage
         gpuUsage = model.gpuUsage
         storagePctPrecise = model.storagePctPrecise
+        cpuUsageHistory = Self.chartSamples(model.cpuUsageHistory)
+        gpuUsageHistory = Self.chartSamples(model.gpuUsageHistory)
+        storagePctHistory = Self.chartSamples(model.storagePctHistory)
         cpuTemp = model.cpuTemp
         gpuTemp = model.gpuTemp
         cpuDieHotspot = model.cpuDieHotspot
@@ -209,12 +500,37 @@ private struct CompactStatusSnapshot: Equatable {
         batteryCharged = model.batteryCharged
         chargerInputWatts = model.chargerInputWatts
         totalPower = model.totalPower
+        energyMeterPowerWatts = model.energyMeterPowerWatts
+        sampledEnergyKWh = model.energyMeterKWh
+        energyMeterCycleDays = model.energyMeterCycleDays
         chargerInputHistory = Self.chartSamples(model.chargerInputHistory)
         chipPowerHistory = Self.chartSamples(model.chipPowerHistory)
         netInBps = model.netInBps
         netOutBps = model.netOutBps
         currentCountry = model.currentCountry
         batteryPct = model.batteryPct
+        pocketWiFiStatus = model.pocketWiFiStatus
+    }
+
+    var primaryTodayTokens: Int64 {
+        hermesUsageAvailable && hermesTodayTokens > 0 ? hermesTodayTokens : codexTodayTokens
+    }
+
+    var primaryTodayTokensText: String {
+        Self.compactCount(primaryTodayTokens)
+    }
+
+    var usageSourceText: String {
+        hermesUsageAvailable && hermesTodayTokens > 0 ? "Hermes" : "Codex"
+    }
+
+    var runtimeValueText: String {
+        hermesTodaySeconds > 0 ? Self.shortDuration(hermesTodaySeconds) : "--"
+    }
+
+    var tokenRateText: String {
+        guard hermesUsageAvailable, hermesTodaySeconds > 0, hermesTodayTokens > 0 else { return "--" }
+        return Self.compactRate(Double(hermesTodayTokens) / hermesTodaySeconds)
     }
 
     private static func chartSamples(_ values: [Double], maxPoints: Int = 96) -> [Double] {
@@ -228,6 +544,45 @@ private struct CompactStatusSnapshot: Equatable {
             return bucket.reduce(0, +) / Double(bucket.count)
         }
     }
+
+    private static func compactCount(_ tokens: Int64) -> String {
+        let value = Double(max(tokens, 0))
+        if value >= 1_000_000 {
+            return String(format: "%.1fM", value / 1_000_000)
+        }
+        if value >= 1_000 {
+            return String(format: "%.0fK", value / 1_000)
+        }
+        return "\(tokens)"
+    }
+
+    private static func shortDuration(_ seconds: Double) -> String {
+        let total = Int(max(0, seconds.rounded()))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let secs = total % 60
+        if hours > 0 {
+            return String(format: "%dh%02dm", hours, minutes)
+        }
+        if minutes > 0 {
+            return String(format: "%dm%02ds", minutes, secs)
+        }
+        return "\(secs)s"
+    }
+
+    private static func compactRate(_ value: Double) -> String {
+        if value >= 1_000 {
+            return String(format: "%.1fK", value / 1_000)
+        }
+        if value >= 100 {
+            return String(format: "%.0f", value)
+        }
+        if value >= 10 {
+            return String(format: "%.1f", value)
+        }
+        return String(format: "%.2f", max(0, value))
+    }
+
 }
 
 private struct CompactStatusSection: View, Equatable {
@@ -246,45 +601,406 @@ private struct CompactStatusSection: View, Equatable {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            CodexQuotaStrip(snapshot: snapshot)
+        VStack(alignment: .leading, spacing: DashboardStyle.sectionSpacing) {
+            TopMetricCards(snapshot: snapshot)
 
             SystemResourceCard(snapshot: snapshot)
-                .padding(.horizontal, 10)
-
-            HStack(spacing: 6) {
-                PowerTrendCard(title: "充电输入趋势",
-                               systemImage: "bolt.fill",
-                               value: snapshot.chargerInputWatts,
-                               history: snapshot.chargerInputHistory,
-                               color: Color(hex: "18A957"))
-                PowerTrendCard(title: "芯片功耗趋势",
-                               systemImage: "cpu",
-                               value: snapshot.totalPower,
-                               history: snapshot.chipPowerHistory,
-                               color: Color(hex: "2563EB"))
-            }
-            .padding(.horizontal, 10)
 
             if snapshot.fanRPM > 0 {
                 FanReasonPanel(reasons: snapshot.fanReasons, stopAdvice: snapshot.fanStopAdvice)
-                    .padding(.horizontal, 10)
             }
 
-            VStack(spacing: 5) {
-                HStack(spacing: 6) {
-                    MiniStat("风扇转速", fanText)
-                    MiniStat("网速", "↓\(fmtB(snapshot.netInBps))/s  ↑\(fmtB(snapshot.netOutBps))/s")
-                }
+            PocketWiFiStatusCard(status: snapshot.pocketWiFiStatus)
 
-                HStack(spacing: 6) {
-                    MiniStat("当前国家", snapshot.currentCountry)
-                    MiniStat("电池", "\(snapshot.batteryPct)%")
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 1)
+            DashboardFooter()
         }
+    }
+}
+
+private struct PocketWiFiStatusCard: View {
+    let status: PocketWiFiStatus
+
+    private var accent: Color {
+        status.available ? DashboardStyle.accentBlue : DashboardStyle.mutedText
+    }
+
+    private var titleText: String {
+        let ssid = status.ssid.trimmingCharacters(in: .whitespacesAndNewlines)
+        if ssid.isEmpty { return "随身 WIFI" }
+        if ssid.contains("阿波") { return "阿波随身 WIFI" }
+        return ssid
+    }
+
+    private var signalColor: Color {
+        guard status.available else { return DashboardStyle.mutedText }
+        if status.signalBars >= 4 { return DashboardStyle.accentGreen }
+        if status.signalBars >= 2 { return DashboardStyle.accentOrange }
+        return DashboardStyle.accentRed
+    }
+
+    private var batteryColor: Color {
+        guard let pct = status.batteryPct else { return DashboardStyle.mutedText }
+        if status.isCharging { return DashboardStyle.accentGreen }
+        if pct <= 20 { return DashboardStyle.accentRed }
+        if pct <= 45 { return DashboardStyle.accentOrange }
+        return DashboardStyle.accentBlue
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DashboardStyle.tileSpacing) {
+            HStack(spacing: 7) {
+                PanelIcon(systemImage: "wifi.router", tint: accent)
+
+                Button {
+                    if let url = URL(string: "https://192.168.0.1") {
+                        NSWorkspace.shared.open(url)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(titleText)
+                            .font(DashboardStyle.wifiTitleFont)
+                            .foregroundColor(DashboardStyle.titleText)
+                            .lineLimit(1)
+                        Image(systemName: "arrow.up.forward")
+                            .font(DashboardStyle.wifiLinkArrowFont)
+                            .foregroundColor(DashboardStyle.secondaryText)
+                    }
+                }
+                .buttonStyle(.plain)
+                .layoutPriority(1)
+
+                Spacer(minLength: 0)
+
+                PanelStatusPill(text: status.connectStatus, tint: accent)
+            }
+
+            HStack(spacing: DashboardStyle.tileSpacing) {
+                PocketWiFiMetric(title: "网络",
+                                 value: status.networkLabel,
+                                 systemImage: "antenna.radiowaves.left.and.right",
+                                 tint: DashboardStyle.accentBlue)
+                PocketWiFiMetric(title: "信号",
+                                 value: status.signalText,
+                                 systemImage: "chart.bar.fill",
+                                 tint: signalColor)
+                PocketWiFiMetric(title: "电量",
+                                 value: status.batteryText + (status.isCharging ? " 充" : ""),
+                                 systemImage: "battery.75percent",
+                                 tint: batteryColor)
+                PocketWiFiMetric(title: "链入",
+                                 value: status.deviceText,
+                                 systemImage: "person.2.fill",
+                                 tint: DashboardStyle.accentBlue)
+            }
+
+            PocketWiFiUsageBar(status: status)
+        }
+        .padding(.horizontal, DashboardStyle.panelPaddingX)
+        .padding(.vertical, DashboardStyle.panelPaddingY)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+}
+
+private struct PocketWiFiUsageBar: View {
+    let status: PocketWiFiStatus
+    @State private var shimmer = false
+
+    private var fillColor: Color {
+        if status.monthlyUsagePercent >= 100 { return DashboardStyle.accentRed }
+        if status.monthlyUsagePercent >= 80 { return DashboardStyle.accentOrange }
+        return DashboardStyle.usageBlue
+    }
+
+    private var fillGradient: LinearGradient {
+        if status.monthlyUsagePercent >= 100 {
+            return DashboardStyle.usageDangerGradient
+        }
+        if status.monthlyUsagePercent >= 80 {
+            return DashboardStyle.usageWarningGradient
+        }
+        return DashboardStyle.usageNormalGradient
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 5) {
+                Text("本月流量")
+                    .font(DashboardStyle.smallLabelFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                Spacer(minLength: 0)
+                Text(String(format: "%.0f%%", status.monthlyUsagePercent))
+                    .font(DashboardStyle.usagePercentFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .monospacedDigit()
+                Text(status.monthlyUsageDetail)
+                    .font(DashboardStyle.usageDetailFont)
+                    .foregroundColor(DashboardStyle.accentBlue.opacity(0.82))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            GeometryReader { geo in
+                let fillWidth = geo.size.width * CGFloat(status.monthlyProgress)
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius)
+                        .fill(DashboardStyle.track)
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius)
+                            .fill(fillGradient)
+                        if fillWidth > 36 {
+                            RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius - 1)
+                                .fill(Color.white.opacity(0.22))
+                                .frame(width: 42)
+                                .offset(x: shimmer ? fillWidth + 12 : -50)
+                        }
+                    }
+                    .frame(width: fillWidth, alignment: .leading)
+                    .clipShape(RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius))
+                }
+            }
+            .frame(height: DashboardStyle.usageBarHeight)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+        .onAppear {
+            shimmer = false
+            DispatchQueue.main.async {
+                withAnimation(.linear(duration: 1.9).repeatForever(autoreverses: false)) {
+                    shimmer = true
+                }
+            }
+        }
+    }
+}
+
+private struct PocketWiFiMetric: View {
+    let title: String
+    let value: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(DashboardStyle.metricIconFont)
+                    .foregroundColor(tint)
+                    .frame(width: DashboardStyle.metricIconWidth)
+                Text(title)
+                    .font(DashboardStyle.tinyLabelFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                    .lineLimit(1)
+            }
+
+            Text(value)
+                .font(DashboardStyle.smallValueFont)
+                .foregroundColor(DashboardStyle.titleText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.58)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity, minHeight: DashboardStyle.wifiMetricHeight, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+    }
+}
+
+private struct TopMetricCards: View {
+    let snapshot: CompactStatusSnapshot
+
+    var body: some View {
+        HStack(spacing: DashboardStyle.sectionSpacing) {
+            CodexPlanMetricCard(snapshot: snapshot)
+            CompactQuotaMetricCard(title: "5小时内",
+                                   pct: snapshot.codexFiveHourRemainingPct,
+                                   caption: snapshot.codexFiveHourResetText.isEmpty ? "4 小时后" : snapshot.codexFiveHourResetText,
+                                   color: quotaColor(snapshot.codexFiveHourRemainingPct))
+            CompactQuotaMetricCard(title: "周券",
+                                   pct: snapshot.codexWeeklyRemainingPct,
+                                   caption: snapshot.codexWeeklyResetText.isEmpty ? "2 天后" : snapshot.codexWeeklyResetText,
+                                   color: DashboardStyle.accentPurple)
+        }
+    }
+
+    private func quotaColor(_ remaining: Int) -> Color {
+        if remaining <= 10 { return DashboardStyle.accentRed }
+        if remaining <= 30 { return DashboardStyle.quotaWarning }
+        return DashboardStyle.quotaHealthy
+    }
+}
+
+private struct CodexPlanMetricCard: View {
+    let snapshot: CompactStatusSnapshot
+
+    private var planTitle: String {
+        "Codex"
+    }
+
+    private var planBadgeText: String {
+        let trimmed = snapshot.codexPlanType.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "Pro" }
+        if trimmed.localizedCaseInsensitiveContains("max") { return "Max" }
+        if trimmed.localizedCaseInsensitiveContains("pro") { return "Pro" }
+        if trimmed.localizedCaseInsensitiveContains("plus") { return "Plus" }
+        return String(trimmed.prefix(4))
+    }
+
+    private var tokenText: String {
+        snapshot.codexTodayTokensText
+            .replacingOccurrences(of: "今日 ", with: "")
+            .replacingOccurrences(of: "tokens", with: "tok")
+            .replacingOccurrences(of: "token", with: "tok")
+    }
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ZStack {
+                Circle().fill(DashboardStyle.codexGreen.opacity(0.12))
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(DashboardStyle.topCardIconFont)
+                    .foregroundColor(DashboardStyle.codexGreen)
+            }
+            .frame(width: DashboardStyle.topCardIconSize, height: DashboardStyle.topCardIconSize)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(planTitle)
+                    .font(DashboardStyle.topCardTitleFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.56)
+                Text(tokenText)
+                    .font(DashboardStyle.monoSmallFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                Text(planBadgeText)
+                    .font(DashboardStyle.badgeFont)
+                    .foregroundColor(DashboardStyle.accentBlue)
+                    .lineLimit(1)
+                    .padding(.horizontal, 5)
+                    .frame(height: 14)
+                    .background(DashboardStyle.softBlueFill)
+                    .clipShape(Capsule())
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, DashboardStyle.topCardPadding)
+        .padding(.vertical, DashboardStyle.topCardPadding)
+        .frame(maxWidth: .infinity, minHeight: DashboardStyle.topCardHeight)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+}
+
+private struct CompactQuotaMetricCard: View {
+    let title: String
+    let pct: Int
+    let caption: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: DashboardStyle.sectionSpacing) {
+            ZStack {
+                Circle().fill(color.opacity(0.12))
+                CircularQuotaProgress(pct: pct, color: color)
+                    .frame(width: DashboardStyle.topCardIconSize, height: DashboardStyle.topCardIconSize)
+                Text("\(pct)%")
+                    .font(DashboardStyle.quotaRingFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .minimumScaleFactor(0.62)
+            }
+            .frame(width: DashboardStyle.topCardIconSize, height: DashboardStyle.topCardIconSize)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(pct)%")
+                    .font(DashboardStyle.topCardTitleFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                Text(title)
+                    .font(DashboardStyle.topCardCaptionFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                    .lineLimit(1)
+                Text(caption)
+                    .font(DashboardStyle.topCardCaptionFont.weight(.bold))
+                    .foregroundColor(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, DashboardStyle.topCardPadding)
+        .padding(.vertical, DashboardStyle.topCardPadding)
+        .frame(maxWidth: .infinity, minHeight: DashboardStyle.topCardHeight)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+}
+
+private struct CircularQuotaProgress: View {
+    let pct: Int
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(DashboardStyle.track, lineWidth: 5)
+            Circle()
+                .trim(from: 0, to: CGFloat(max(0, min(pct, 100))) / 100)
+                .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-92))
+        }
+    }
+}
+
+private struct InfoActionTile: View {
+    let title: String
+    let value: String
+    let systemImage: String
+    let tint: Color
+    var showChevron = false
+
+    var body: some View {
+        HStack(spacing: 9) {
+            ZStack {
+                Circle().fill(tint.opacity(0.10))
+                Image(systemName: systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(tint)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(Color(hex: "5D6B88"))
+                Text(value)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "111827"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            Spacer(minLength: 0)
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "5D6B88"))
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity)
+        .frame(height: 42)
+        .background(SoftPanelBackground(cornerRadius: 14))
     }
 }
 
@@ -293,49 +1009,480 @@ private struct SoftPanelBackground: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(Color.white.opacity(0.74))
+            .fill(DashboardStyle.panelFill)
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.black.opacity(0.06), lineWidth: 0.8)
+                    .stroke(DashboardStyle.panelStroke, lineWidth: 0.8)
             )
-            .shadow(color: Color(hex: "64748B").opacity(0.10), radius: 12, x: 0, y: 6)
+            .shadow(color: DashboardStyle.shadow, radius: 12, x: 0, y: 6)
     }
+}
+
+private struct PanelHeader: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    var trailingText: String? = nil
+
+    var body: some View {
+        HStack(spacing: DashboardStyle.sectionSpacing) {
+            PanelIcon(systemImage: systemImage, tint: tint)
+            Text(title)
+                .font(DashboardStyle.panelTitleFont)
+                .foregroundColor(DashboardStyle.titleText)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            if let trailingText {
+                PanelStatusPill(text: trailingText, tint: tint)
+            }
+        }
+        .frame(height: DashboardStyle.panelHeaderHeight)
+    }
+}
+
+private struct PanelIcon: View {
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        ZStack {
+            Circle().fill(tint.opacity(0.11))
+            Image(systemName: systemImage)
+                .font(DashboardStyle.panelIconFont)
+                .foregroundColor(tint)
+        }
+        .frame(width: DashboardStyle.panelIconSize, height: DashboardStyle.panelIconSize)
+    }
+}
+
+private struct PanelStatusPill: View {
+    let text: String
+    let tint: Color
+
+    var body: some View {
+        Text(text)
+            .font(DashboardStyle.smallLabelFont)
+            .foregroundColor(tint)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, 7)
+            .frame(height: DashboardStyle.headerChipHeight - 4)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.09))
+                    .overlay(Capsule().stroke(tint.opacity(0.12), lineWidth: 0.6))
+            )
+    }
+}
+
+private struct SystemMetricState {
+    let label: String
+    let tint: Color
 }
 
 private struct SystemResourceCard: View {
     let snapshot: CompactStatusSnapshot
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("系统资源", systemImage: "speedometer")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(Color(hex: "17213A"))
+    private var chargerValue: Double {
+        snapshot.batteryOnAC ? snapshot.chargerInputWatts : 0
+    }
 
-            VStack(spacing: 4) {
-                ResourceMetricRow(title: "处理器",
-                                  systemImage: "cpu",
-                                  pct: Double(snapshot.cpuUsage),
-                                  color: Color(hex: "F05A24"),
-                                  value: "\(snapshot.cpuUsage)%")
-                ResourceMetricRow(title: "图形",
-                                  systemImage: "display",
-                                  pct: Double(snapshot.gpuUsage),
-                                  color: Color(hex: "F59E0B"),
-                                  value: "\(snapshot.gpuUsage)%")
-                ResourceMetricRow(title: "存储",
-                                  systemImage: "internaldrive",
-                                  pct: snapshot.storagePctPrecise,
-                                  color: Color(hex: "7C3AED"),
-                                  value: String(format: "%.1f%%", snapshot.storagePctPrecise))
+    private var chargerDetail: String {
+        if snapshot.batteryCharging { return "充电中" }
+        if snapshot.batteryOnAC { return "外接" }
+        return "电池"
+    }
+
+    private var energyReadingText: String {
+        let kWh = max(0, snapshot.sampledEnergyKWh)
+        if kWh < 1 {
+            let wh = kWh * 1000
+            return wh >= 10 ? String(format: "%.0fWh", wh) : String(format: "%.1fWh", wh)
+        }
+        if kWh < 10 {
+            return String(format: "%.2fkWh", kWh)
+        }
+        return String(format: "%.1fkWh", kWh)
+    }
+
+    private var cpuState: SystemMetricState {
+        performanceState(percent: snapshot.cpuUsage, activeAt: 45, highAt: 75, maxAt: 90)
+    }
+
+    private var gpuState: SystemMetricState {
+        performanceState(percent: snapshot.gpuUsage, activeAt: 40, highAt: 70, maxAt: 88)
+    }
+
+    private var chargerState: SystemMetricState {
+        if !snapshot.batteryOnAC {
+            return SystemMetricState(label: "电池", tint: DashboardStyle.accentBlue)
+        }
+        if chargerValue >= 96 {
+            return SystemMetricState(label: "高功率", tint: DashboardStyle.accentRed)
+        }
+        if chargerValue >= 45 {
+            return SystemMetricState(label: "快充", tint: DashboardStyle.accentOrange)
+        }
+        if chargerValue >= 5 {
+            return SystemMetricState(label: "充电中", tint: DashboardStyle.accentGreen)
+        }
+        return SystemMetricState(label: chargerDetail, tint: DashboardStyle.accentGreen)
+    }
+
+    private var chipState: SystemMetricState {
+        if snapshot.totalPower >= 80 {
+            return SystemMetricState(label: "过载", tint: DashboardStyle.accentRed)
+        }
+        if snapshot.totalPower >= 45 {
+            return SystemMetricState(label: "高功耗", tint: DashboardStyle.accentOrange)
+        }
+        if snapshot.totalPower >= 18 {
+            return SystemMetricState(label: "性能", tint: DashboardStyle.accentBlue)
+        }
+        return SystemMetricState(label: "省电", tint: DashboardStyle.accentGreen)
+    }
+
+    private func performanceState(percent: Int, activeAt: Int, highAt: Int, maxAt: Int) -> SystemMetricState {
+        if percent >= maxAt {
+            return SystemMetricState(label: "满载", tint: DashboardStyle.accentRed)
+        }
+        if percent >= highAt {
+            return SystemMetricState(label: "高载", tint: DashboardStyle.accentOrange)
+        }
+        if percent >= activeAt {
+            return SystemMetricState(label: "性能", tint: DashboardStyle.accentBlue)
+        }
+        return SystemMetricState(label: "轻载", tint: DashboardStyle.accentGreen)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DashboardStyle.systemStackSpacing) {
+            PanelHeader(title: "系统资源",
+                        systemImage: "speedometer",
+                        tint: DashboardStyle.accentBlue)
+
+            SystemPriorityStatusRow(fanRPM: snapshot.fanRPM,
+                                    netInBps: snapshot.netInBps,
+                                    netOutBps: snapshot.netOutBps,
+                                    batteryPct: snapshot.batteryPct)
+
+            HStack(spacing: DashboardStyle.systemStackSpacing) {
+                PrimarySystemMetricTile(title: "CPU",
+                                        systemImage: "cpu",
+                                        value: "\(snapshot.cpuUsage)%",
+                                        detail: cpuState.label,
+                                        history: snapshot.cpuUsageHistory,
+                                        unit: "%",
+                                        fixedMax: nil,
+                                        color: DashboardStyle.accentCoral,
+                                        iconColor: cpuState.tint)
+                PrimarySystemMetricTile(title: "GPU",
+                                        systemImage: "cpu",
+                                        value: "\(snapshot.gpuUsage)%",
+                                        detail: gpuState.label,
+                                        history: snapshot.gpuUsageHistory,
+                                        unit: "%",
+                                        fixedMax: nil,
+                                        color: DashboardStyle.accentPurple,
+                                        iconColor: gpuState.tint)
+            }
+
+            HStack(spacing: DashboardStyle.systemStackSpacing) {
+                PrimarySystemMetricTile(title: "充电",
+                                        systemImage: "bolt.fill",
+                                        value: String(format: "%.1fW", chargerValue),
+                                        detail: chargerState.label,
+                                        history: snapshot.chargerInputHistory,
+                                        unit: "W",
+                                        fixedMax: nil,
+                                        color: DashboardStyle.accentGreen,
+                                        iconColor: chargerState.tint)
+                PrimarySystemMetricTile(title: "芯片",
+                                        systemImage: "cpu",
+                                        value: String(format: "%.1fW", snapshot.totalPower),
+                                        detail: chipState.label,
+                                        history: snapshot.chipPowerHistory,
+                                        unit: "W",
+                                        fixedMax: nil,
+                                        color: DashboardStyle.accentBlue,
+                                        iconColor: chipState.tint)
+            }
+
+            HStack(spacing: DashboardStyle.systemStackSpacing) {
+                SecondarySystemMetricPill(title: "SSD",
+                                          value: String(format: "%.1f%%", snapshot.storagePctPrecise),
+                                          detail: "健康",
+                                          systemImage: "internaldrive",
+                                          tint: DashboardStyle.accentBlue)
+                SecondarySystemMetricPill(title: "用电表",
+                                          value: energyReadingText,
+                                          detail: "\(snapshot.energyMeterCycleDays)天",
+                                          systemImage: "bolt.square",
+                                          tint: DashboardStyle.accentPurple)
             }
 
             TemperatureBand(cpuTemp: snapshot.cpuTemp,
                             gpuTemp: snapshot.gpuTemp,
                             cpuDieHotspot: snapshot.cpuDieHotspot)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
-        .background(SoftPanelBackground(cornerRadius: 14))
+        .padding(.horizontal, DashboardStyle.panelPaddingX)
+        .padding(.vertical, DashboardStyle.densePanelPaddingY)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+}
+
+private struct SystemPriorityStatusRow: View {
+    let fanRPM: Int
+    let netInBps: Int64
+    let netOutBps: Int64
+    let batteryPct: Int
+
+    private var fanText: String {
+        fanRPM > 0 ? "\(fanRPM) RPM" : "无风扇"
+    }
+
+    private var fanState: SystemMetricState {
+        if fanRPM <= 0 {
+            return SystemMetricState(label: "静音", tint: DashboardStyle.mutedText)
+        }
+        if fanRPM >= 5200 {
+            return SystemMetricState(label: "满速", tint: DashboardStyle.accentRed)
+        }
+        if fanRPM >= 3600 {
+            return SystemMetricState(label: "高转", tint: DashboardStyle.accentOrange)
+        }
+        if fanRPM >= 2200 {
+            return SystemMetricState(label: "散热", tint: DashboardStyle.accentBlue)
+        }
+        return SystemMetricState(label: "安静", tint: DashboardStyle.accentGreen)
+    }
+
+    private static func shortB(_ bps: Int64) -> String {
+        let value = Double(max(0, bps))
+        if value >= 1_048_576 {
+            return String(format: "%.1fM", value / 1_048_576)
+        }
+        if value >= 1_024 {
+            return String(format: "%.0fK", value / 1_024)
+        }
+        return "\(Int(value))B"
+    }
+
+    var body: some View {
+        HStack(spacing: DashboardStyle.systemStackSpacing) {
+            SystemStatusPill(title: "风扇转速",
+                             value: fanText,
+                             systemImage: "fan",
+                             tint: DashboardStyle.accentBlue,
+                             iconTint: fanState.tint,
+                             isPrimary: true)
+                .frame(maxWidth: .infinity)
+
+            SystemStatusPill(title: "网速",
+                             value: "↓\(Self.shortB(netInBps)) ↑\(Self.shortB(netOutBps))",
+                             systemImage: "wifi",
+                             tint: DashboardStyle.accentGreen,
+                             isPrimary: false)
+                .frame(width: DashboardStyle.statusNetWidth)
+
+            SystemStatusPill(title: "电池",
+                             value: "\(batteryPct)%",
+                             systemImage: "battery.75percent",
+                             tint: DashboardStyle.accentCoral,
+                             isPrimary: false)
+                .frame(width: DashboardStyle.statusBatteryWidth)
+        }
+    }
+}
+
+private struct SystemStatusPill: View {
+    let title: String
+    let value: String
+    let systemImage: String
+    let tint: Color
+    var iconTint: Color? = nil
+    let isPrimary: Bool
+
+    var body: some View {
+        HStack(spacing: isPrimary ? 5 : 3) {
+            ZStack {
+                Circle().fill(tint.opacity(isPrimary ? 0.12 : 0.10))
+                Image(systemName: systemImage)
+                    .font(isPrimary ? DashboardStyle.statusPrimaryIconFont : DashboardStyle.statusSecondaryIconFont)
+                    .foregroundColor(iconTint ?? tint)
+            }
+            .frame(width: isPrimary ? DashboardStyle.statusPrimaryIconSize : DashboardStyle.statusSecondaryIconSize,
+                   height: isPrimary ? DashboardStyle.statusPrimaryIconSize : DashboardStyle.statusSecondaryIconSize)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(isPrimary ? DashboardStyle.smallLabelFont : DashboardStyle.tinyLabelFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                    .lineLimit(1)
+                Text(value)
+                    .font(isPrimary ? DashboardStyle.mediumValueFont : DashboardStyle.smallValueFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                    .monospacedDigit()
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, isPrimary ? 7 : 5)
+        .frame(height: DashboardStyle.statusPillHeight)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+    }
+}
+
+private struct PrimarySystemMetricTile: View {
+    let title: String
+    let systemImage: String
+    let value: String
+    let detail: String
+    let history: [Double]
+    let unit: String
+    let fixedMax: Double?
+    let color: Color
+    var iconColor: Color? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .top, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: systemImage)
+                            .font(DashboardStyle.primaryMetricIconFont)
+                            .foregroundColor(iconColor ?? color)
+                            .frame(width: DashboardStyle.primaryMetricIconWidth)
+                        Text(title)
+                            .font(DashboardStyle.smallLabelFont.weight(.bold))
+                            .foregroundColor(DashboardStyle.titleText)
+                            .lineLimit(1)
+                    }
+                    Text(detail)
+                        .font(DashboardStyle.badgeFont)
+                        .foregroundColor(color.opacity(0.86))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, 5)
+                        .frame(height: 13)
+                        .background(color.opacity(0.09))
+                        .clipShape(Capsule())
+                }
+                Spacer(minLength: 0)
+                Text(value)
+                    .font(DashboardStyle.primaryValueFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+                    .monospacedDigit()
+                    .frame(maxWidth: 52, alignment: .trailing)
+            }
+            SparklineView(values: history,
+                          color: color,
+                          unit: unit,
+                          fixedMax: fixedMax,
+                          timeLabel: "4h")
+                .frame(height: DashboardStyle.sparklineHeight)
+        }
+        .padding(.horizontal, DashboardStyle.metricTilePaddingX)
+        .padding(.vertical, DashboardStyle.metricTilePaddingY)
+        .frame(maxWidth: .infinity, minHeight: DashboardStyle.primaryMetricHeight, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                .fill(DashboardStyle.raisedTileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+    }
+}
+
+private struct SecondarySystemMetricPill: View {
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(DashboardStyle.secondaryMetricIconFont)
+                .foregroundColor(tint)
+                .frame(width: DashboardStyle.secondaryMetricIconWidth)
+            Text(title)
+                .font(DashboardStyle.smallLabelFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+                .lineLimit(1)
+            Text(value)
+                .font(DashboardStyle.secondaryValueFont)
+                .foregroundColor(DashboardStyle.bodyText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .monospacedDigit()
+            Spacer(minLength: 0)
+            Text(detail)
+                .font(DashboardStyle.badgeFont)
+                .foregroundColor(tint)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, DashboardStyle.metricTilePaddingX)
+        .frame(maxWidth: .infinity)
+        .frame(height: DashboardStyle.secondaryMetricHeight)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+    }
+}
+
+private struct DecorativeSparkline: View {
+    let color: Color
+    var seed: Double = 50
+
+    var body: some View {
+        GeometryReader { geo in
+            let normalized = CGFloat(max(8, min(seed, 100))) / 100
+            let points = [
+                CGPoint(x: 0, y: geo.size.height * (0.72 - normalized * 0.10)),
+                CGPoint(x: geo.size.width * 0.18, y: geo.size.height * 0.66),
+                CGPoint(x: geo.size.width * 0.34, y: geo.size.height * (0.48 + normalized * 0.15)),
+                CGPoint(x: geo.size.width * 0.52, y: geo.size.height * 0.60),
+                CGPoint(x: geo.size.width * 0.70, y: geo.size.height * (0.34 + normalized * 0.18)),
+                CGPoint(x: geo.size.width, y: geo.size.height * (0.44 - normalized * 0.12))
+            ]
+
+            ZStack(alignment: .bottom) {
+                Path { path in
+                    guard let first = points.first else { return }
+                    path.move(to: CGPoint(x: first.x, y: geo.size.height))
+                    points.forEach { path.addLine(to: $0) }
+                    if let last = points.last {
+                        path.addLine(to: CGPoint(x: last.x, y: geo.size.height))
+                    }
+                    path.closeSubpath()
+                }
+                .fill(LinearGradient(colors: [color.opacity(0.14), color.opacity(0.02)],
+                                     startPoint: .top,
+                                     endPoint: .bottom))
+
+                Path { path in
+                    guard let first = points.first else { return }
+                    path.move(to: first)
+                    for point in points.dropFirst() {
+                        path.addLine(to: point)
+                    }
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            }
+        }
     }
 }
 
@@ -384,19 +1531,13 @@ private struct TemperatureBand: View {
     let cpuDieHotspot: Double
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 7) {
             TemperatureBandItem(systemImage: "cpu", label: "CPU", temp: cpuTemp)
-            Divider().frame(height: 16)
-            TemperatureBandItem(systemImage: "display", label: "图形", temp: gpuTemp)
+            TemperatureBandItem(systemImage: "display", label: "GPU", temp: gpuTemp)
             if cpuDieHotspot > 0 {
-                Divider().frame(height: 16)
                 TemperatureBandItem(systemImage: "flame.fill", label: "热点", temp: cpuDieHotspot)
             }
         }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 4)
-        .background(Color(hex: "F4F6FB").opacity(0.82))
-        .clipShape(RoundedRectangle(cornerRadius: 9))
     }
 }
 
@@ -408,16 +1549,20 @@ private struct TemperatureBandItem: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: systemImage)
-                .font(.system(size: 8, weight: .semibold))
+                .font(DashboardStyle.topCardCaptionFont)
                 .foregroundColor(tempColor(temp))
             Text(label)
-                .font(.system(size: 8, weight: .semibold))
+                .font(DashboardStyle.topCardCaptionFont)
                 .foregroundColor(tempColor(temp))
             Text(String(format: "%.0f°C", temp))
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .font(DashboardStyle.monoSmallFont)
                 .foregroundColor(tempColor(temp))
         }
+        .padding(.horizontal, 6)
+        .frame(height: DashboardStyle.temperatureBandHeight)
         .frame(maxWidth: .infinity)
+        .background(tempColor(temp).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius - 2))
         .lineLimit(1)
         .minimumScaleFactor(0.68)
     }
@@ -431,48 +1576,67 @@ private struct PowerTrendCard: View {
     let color: Color
 
     private var deltaText: String {
-        guard let first = history.first, first > 0.05 else { return "实时同步" }
+        guard let first = history.first, first > 0.05 else { return "同步中" }
         let delta = (value - first) / first * 100
         let arrow = delta >= 0 ? "↑" : "↓"
-        return String(format: "较4小时前 %@ %.0f%%", arrow, abs(delta))
+        return String(format: "4h %@%.0f%%", arrow, abs(delta))
+    }
+
+    private var compactTitle: String {
+        if title.contains("充电") { return "充电" }
+        if title.contains("芯片") { return "芯片" }
+        return title
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 3) {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 2) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 8, weight: .semibold))
+                    .font(.system(size: 8, weight: .bold))
                     .foregroundColor(color)
-                Text(title)
-                    .font(.system(size: 8, weight: .semibold))
+                    .frame(width: 9)
+                Text(compactTitle)
+                    .font(.system(size: 8, weight: .bold))
                     .foregroundColor(Color(hex: "17213A"))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.74)
+                    .minimumScaleFactor(0.85)
+                    .truncationMode(.tail)
                 Spacer(minLength: 0)
-                Text("4小时⌄")
-                    .font(.system(size: 7, weight: .medium))
-                    .foregroundColor(Color(hex: "5D6B88"))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(Color(hex: "EEF1F7"))
-                    .clipShape(Capsule())
+                TimeRangePill()
             }
-            Text(String(format: "%.1f W", value))
-                .font(.system(size: 15, weight: .bold, design: .monospaced))
+            Text(String(format: "%.1fW", value))
+                .font(.system(size: 15.5, weight: .bold, design: .rounded))
                 .foregroundColor(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
+                .monospacedDigit()
             Text(deltaText)
-                .font(.system(size: 7, weight: .medium))
+                .font(.system(size: 7.5, weight: .bold))
                 .foregroundColor(color.opacity(0.86))
                 .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.8)
             PowerTrendChart(values: history, currentValue: value, color: color)
                 .frame(height: 29)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 7)
         .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 102, alignment: .topLeading)
         .background(SoftPanelBackground(cornerRadius: 14))
+    }
+}
+
+private struct TimeRangePill: View {
+    var body: some View {
+        Text("4h")
+            .font(.system(size: 7.5, weight: .bold, design: .rounded))
+            .foregroundColor(Color(hex: "5D6B88"))
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(width: 22, height: 15)
+            .background(Color(hex: "EEF1F7"))
+            .clipShape(Capsule())
+            .layoutPriority(2)
     }
 }
 
@@ -533,7 +1697,7 @@ private struct PowerTrendChart: View {
         GeometryReader { geo in
             let topInset: CGFloat = 3
             let bottomInset: CGFloat = 10
-            let leftInset: CGFloat = 17
+            let leftInset: CGFloat = 14
             let rightInset: CGFloat = 3
             let chartW = max(1, geo.size.width - leftInset - rightInset)
             let chartH = max(1, geo.size.height - topInset - bottomInset)
@@ -554,11 +1718,13 @@ private struct PowerTrendChart: View {
                     }
                     .stroke(Color(hex: "D9DEE8"), lineWidth: 0.7)
                 }
-                ForEach(Array(tickValues.enumerated()), id: \.offset) { _, tick in
-                    Text("\(Int(tick.rounded()))W")
-                        .font(.system(size: 6, weight: .medium, design: .monospaced))
-                        .foregroundColor(Color(hex: "5D6B88"))
-                        .position(x: 9, y: topInset + chartH * CGFloat((maxValue - tick) / maxValue))
+                ForEach(Array(tickValues.enumerated()), id: \.offset) { offset, tick in
+                    if offset == 0 || offset == tickValues.count - 1 {
+                        Text("\(Int(tick.rounded()))W")
+                            .font(.system(size: 5.5, weight: .semibold, design: .monospaced))
+                            .foregroundColor(Color(hex: "5D6B88"))
+                            .position(x: 7, y: topInset + chartH * CGFloat((maxValue - tick) / maxValue))
+                    }
                 }
                 smoothAreaPath(points: points, baseline: topInset + chartH)
                 .fill(LinearGradient(colors: [color.opacity(0.18), color.opacity(0.02)],
@@ -576,21 +1742,18 @@ private struct PowerTrendChart: View {
                         .position(last)
                 }
 
-                HStack {
+                Group {
                     Text("-4h")
-                    Spacer()
-                    Text("-3h")
-                    Spacer()
+                        .position(x: leftInset + 7, y: geo.size.height - 5)
                     Text("-2h")
-                    Spacer()
-                    Text("-1h")
-                    Spacer()
+                        .position(x: leftInset + chartW / 2, y: geo.size.height - 5)
                     Text("现在")
+                        .position(x: leftInset + chartW - 7, y: geo.size.height - 5)
                 }
-                .font(.system(size: 6, weight: .medium))
+                .font(.system(size: 5.5, weight: .semibold))
                 .foregroundColor(Color(hex: "5D6B88"))
-                .frame(width: chartW)
-                .position(x: leftInset + chartW / 2, y: geo.size.height - 5)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
             }
         }
     }
@@ -915,30 +2078,78 @@ private struct MiniTrendCard: View {
 private struct SparklineView: View {
     let values: [Double]
     let color: Color
+    var unit = ""
+    var fixedMax: Double? = nil
+    var timeLabel = "4h"
 
     private var samples: [Double] {
-        let cleaned = values.suffix(28).map { max(0, $0) }
+        let cleaned = values.suffix(96).map { max(0, $0) }
         return cleaned.isEmpty ? [0, 0] : cleaned
+    }
+
+    private func niceUpperBound(for value: Double) -> Double {
+        let raw = max(value, 1)
+        if let fixedMax { return max(fixedMax, raw) }
+        if unit == "%" {
+            if raw <= 20 { return 20 }
+            if raw <= 50 { return 50 }
+            return 100
+        }
+        if raw <= 1 { return 1 }
+        if raw <= 10 { return ceil(raw / 2) * 2 }
+        if raw <= 30 { return ceil(raw / 5) * 5 }
+        if raw <= 60 { return ceil(raw / 10) * 10 }
+        if raw <= 150 { return ceil(raw / 25) * 25 }
+        return ceil(raw / 50) * 50
+    }
+
+    private func axisText(_ value: Double) -> String {
+        if unit == "%" {
+            return "\(Int(value.rounded()))%"
+        }
+        if unit == "W" {
+            if value >= 100 { return "\(Int(value.rounded()))W" }
+            if value >= 10 { return "\(Int(value.rounded()))W" }
+            return String(format: "%.0fW", value)
+        }
+        return "\(Int(value.rounded()))"
     }
 
     var body: some View {
         GeometryReader { geo in
             let data = samples
-            let minValue = data.min() ?? 0
-            let maxValue = Swift.max((data.max() ?? 1), minValue + 1)
+            let chartTop: CGFloat = 2
+            let chartBottom: CGFloat = 9
+            let leftAxisWidth: CGFloat = 20
+            let axisGap: CGFloat = 2
+            let chartX = leftAxisWidth + axisGap
+            let chartWidth = max(1, geo.size.width - chartX)
+            let chartHeight = max(1, geo.size.height - chartTop - chartBottom)
+            let minValue = 0.0
+            let maxValue = niceUpperBound(for: data.max() ?? 1)
             let range = maxValue - minValue
             let points = data.enumerated().map { index, value in
-                CGPoint(x: geo.size.width * CGFloat(index) / CGFloat(max(data.count - 1, 1)),
-                        y: geo.size.height - geo.size.height * CGFloat((value - minValue) / range))
+                CGPoint(x: chartX + chartWidth * CGFloat(index) / CGFloat(max(data.count - 1, 1)),
+                        y: chartTop + chartHeight - chartHeight * CGFloat((min(max(value, minValue), maxValue) - minValue) / range))
             }
 
-            ZStack {
+            ZStack(alignment: .topLeading) {
+                ForEach([0.0, 0.5, 1.0], id: \.self) { tick in
+                    let y = chartTop + chartHeight * CGFloat(1 - tick)
+                    Path { path in
+                        path.move(to: CGPoint(x: chartX, y: y))
+                        path.addLine(to: CGPoint(x: chartX + chartWidth, y: y))
+                    }
+                    .stroke(DashboardStyle.track.opacity(tick == 0 ? 0.9 : 0.58),
+                            style: StrokeStyle(lineWidth: 0.65, dash: tick == 0 ? [] : [2.2, 3]))
+                }
+
                 Path { path in
                     guard let first = points.first else { return }
-                    path.move(to: CGPoint(x: first.x, y: geo.size.height))
+                    path.move(to: CGPoint(x: first.x, y: chartTop + chartHeight))
                     points.forEach { path.addLine(to: $0) }
                     if let last = points.last {
-                        path.addLine(to: CGPoint(x: last.x, y: geo.size.height))
+                        path.addLine(to: CGPoint(x: last.x, y: chartTop + chartHeight))
                     }
                     path.closeSubpath()
                 }
@@ -962,6 +2173,33 @@ private struct SparklineView: View {
                         .overlay(Circle().stroke(color, lineWidth: 1.4))
                         .position(last)
                 }
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(axisText(maxValue))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Spacer(minLength: 0)
+                    Text(axisText(maxValue / 2))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Spacer(minLength: 0)
+                    Text(axisText(0))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .font(DashboardStyle.axisLabelFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+                .frame(width: leftAxisWidth, height: chartHeight + 2, alignment: .leading)
+                .position(x: leftAxisWidth / 2,
+                          y: chartTop + chartHeight / 2)
+
+                HStack {
+                    Text("\(timeLabel)前")
+                    Spacer(minLength: 0)
+                    Text("现在")
+                }
+                .font(DashboardStyle.axisLabelFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+                .frame(width: chartWidth, height: chartBottom, alignment: .bottom)
+                .position(x: chartX + chartWidth / 2,
+                          y: chartTop + chartHeight + chartBottom / 2)
             }
         }
     }
@@ -978,64 +2216,105 @@ private struct CodexQuotaStrip: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            HStack(spacing: 5) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(LinearGradient(colors: [Color(hex: "111827"),
-                                                      Color(hex: "263146")],
-                                             startPoint: .topLeading,
-                                             endPoint: .bottomTrailing))
-                    Image(systemName: "terminal")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                .frame(width: 28, height: 28)
+        HStack(spacing: 10) {
+            HStack(spacing: 10) {
+                TerminalBadge()
+                    .frame(width: 44, height: 44)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(planTitle)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(Color(hex: "111827"))
                         .lineLimit(1)
-                    Text(snapshot.codexTodayTokensText)
-                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    Text(snapshot.codexTodayTokensText.replacingOccurrences(of: "今日 ", with: ""))
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         .foregroundColor(Color(hex: "5D6B88"))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text("Pro Plan")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(Color(hex: "246BFF"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "EAF1FF"))
+                        .clipShape(Capsule())
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .layoutPriority(0)
 
             Rectangle()
                 .fill(Color(hex: "D9DEE8"))
-                .frame(width: 1, height: 32)
+                .frame(width: 1, height: 50)
 
-            CodexQuotaColumn(label: "5小时余",
-                             pct: snapshot.codexFiveHourRemainingPct,
-                             caption: snapshot.codexFiveHourResetText.isEmpty ? "预计剩余" : snapshot.codexFiveHourResetText,
-                             color: quotaColor(snapshot.codexFiveHourRemainingPct))
-                .layoutPriority(2)
+            QuotaRing(label: "5小时内",
+                      pct: snapshot.codexFiveHourRemainingPct,
+                      caption: snapshot.codexFiveHourResetText.isEmpty ? "4 小时后重置" : snapshot.codexFiveHourResetText,
+                      color: quotaColor(snapshot.codexFiveHourRemainingPct))
 
-            Rectangle()
-                .fill(Color(hex: "D9DEE8"))
-                .frame(width: 1, height: 32)
-
-            CodexQuotaColumn(label: "周余",
-                             pct: snapshot.codexWeeklyRemainingPct,
-                             caption: snapshot.codexWeeklyResetText.isEmpty ? "预计剩余" : snapshot.codexWeeklyResetText,
-                             color: quotaColor(snapshot.codexWeeklyRemainingPct))
-                .layoutPriority(2)
+            QuotaRing(label: "周券",
+                      pct: snapshot.codexWeeklyRemainingPct,
+                      caption: snapshot.codexWeeklyResetText.isEmpty ? "6 天后重置" : snapshot.codexWeeklyResetText,
+                      color: Color(hex: "8C35F2"))
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(SoftPanelBackground(cornerRadius: 14))
-        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .background(SoftPanelBackground(cornerRadius: 16))
     }
 
     private func quotaColor(_ remaining: Int) -> Color {
         if remaining <= 10 { return Color(hex: "DC2626") }
         if remaining <= 30 { return Color(hex: "F05A24") }
         return Color(hex: "16A34A")
+    }
+}
+
+private struct TerminalBadge: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(LinearGradient(colors: [Color(hex: "111827"),
+                                              Color(hex: "263146")],
+                                     startPoint: .topLeading,
+                                     endPoint: .bottomTrailing))
+            Image(systemName: "terminal")
+                .font(.system(size: 21, weight: .heavy))
+                .foregroundColor(Color(hex: "DDE7F4"))
+        }
+        .shadow(color: Color(hex: "111827").opacity(0.18), radius: 8, x: 0, y: 4)
+    }
+}
+
+private struct QuotaRing: View {
+    let label: String
+    let pct: Int
+    let caption: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundColor(Color(hex: "5D6B88"))
+                .lineLimit(1)
+            ZStack {
+                Circle()
+                    .stroke(Color(hex: "E7ECF5"), lineWidth: 6)
+                Circle()
+                    .trim(from: 0, to: CGFloat(max(0, min(pct, 100))) / 100)
+                    .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-92))
+                Text("\(pct)%")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(hex: "111827"))
+            }
+            .frame(width: 44, height: 44)
+            Text(caption)
+                .font(.system(size: 7, weight: .semibold))
+                .foregroundColor(Color(hex: "5D6B88"))
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+        }
+        .frame(width: 48)
     }
 }
 
@@ -1123,28 +2402,27 @@ private struct FanReasonPanel: View {
     let stopAdvice: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Label("风扇原因", systemImage: "fan")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(Color(hex: "17213A"))
-
-            VStack(spacing: 3) {
-                ForEach(Array(reasons.prefix(3).enumerated()), id: \.offset) { index, reason in
-                    FanReasonRow(index: index + 1,
-                                 text: reason,
-                                 pct: fanReasonPercent(reason, index: index))
-                }
-            }
-
-            Text("强停建议：\(stopAdvice)")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundColor(stopAdvice.hasPrefix("可") ? Color(hex: "B45309") : Color(hex: "15803D"))
+        HStack(spacing: 6) {
+            PanelIcon(systemImage: "fan", tint: DashboardStyle.accentBlue)
+            Text("风扇原因")
+                .font(DashboardStyle.smallLabelFont)
+                .foregroundColor(DashboardStyle.titleText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.72)
+            FanReasonRow(index: 1,
+                         text: reasons.first ?? "正在判断当前任务",
+                         pct: fanReasonPercent(reasons.first ?? "", index: 0))
+            Text(stopAdvice.hasPrefix("可") ? "可停" : "不建议")
+                .font(DashboardStyle.badgeFont)
+                .foregroundColor(stopAdvice.hasPrefix("可") ? DashboardStyle.warningText : DashboardStyle.successText)
+                .lineLimit(1)
+                .padding(.horizontal, 6)
+                .frame(height: 16)
+                .background((stopAdvice.hasPrefix("可") ? DashboardStyle.accentOrange : DashboardStyle.accentGreen).opacity(0.09))
+                .clipShape(Capsule())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(SoftPanelBackground(cornerRadius: 14))
+        .padding(.horizontal, DashboardStyle.panelPaddingX)
+        .frame(height: 34)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
     }
 
     private func fanReasonPercent(_ reason: String, index: Int) -> Int {
@@ -1166,35 +2444,33 @@ private struct FanReasonRow: View {
     let pct: Int
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text("\(index)")
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                .foregroundColor(Color(hex: "2563EB"))
-                .frame(width: 14, height: 14)
-                .background(Color(hex: "DBEAFE"))
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-
+        HStack(spacing: 5) {
             Text(text)
-                .font(.system(size: 8, weight: .medium))
-                .foregroundColor(Color(hex: "17213A"))
+                .font(DashboardStyle.fanReasonFont)
+                .foregroundColor(DashboardStyle.bodyText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.70)
+                .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
 
             GeometryReader { geo in
+                let progress = CGFloat(max(0, min(pct, 100))) / 100
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: "E7E9F0"))
-                    Capsule().fill(Color(hex: "2563EB"))
-                        .frame(width: geo.size.width * CGFloat(max(0, min(pct, 100))) / 100)
+                    Capsule().fill(DashboardStyle.track)
+                    Capsule().fill(DashboardStyle.accentBlue)
+                        .frame(width: geo.size.width * progress)
+                        .animation(.easeOut(duration: 1.15), value: pct)
                 }
             }
-            .frame(width: 50, height: 4)
+            .frame(width: DashboardStyle.fanReasonProgressWidth, height: DashboardStyle.fanReasonProgressHeight)
+            .fixedSize(horizontal: true, vertical: false)
 
             Text("\(pct)%")
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
-                .foregroundColor(Color(hex: "17213A"))
-                .frame(width: 24, alignment: .trailing)
+                .font(DashboardStyle.secondaryValueFont)
+                .foregroundColor(DashboardStyle.bodyText)
+                .frame(width: DashboardStyle.fanReasonPercentWidth, alignment: .trailing)
         }
+        .frame(height: DashboardStyle.fanReasonRowHeight)
     }
 }
 
@@ -1483,6 +2759,234 @@ private struct MiniStat: View {
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(SoftPanelBackground(cornerRadius: 12))
+    }
+}
+
+private struct EnergyUsageCard: View {
+    let powerWatts: Double
+    let isOnAC: Bool
+    let energyKWh: Double
+    let cycleDays: Int
+
+    private var meterReadingText: String {
+        let kWh = max(0, energyKWh)
+        if kWh < 1 {
+            let wh = kWh * 1000
+            return wh >= 10 ? String(format: "%.0f", wh) : String(format: "%.1f", wh)
+        }
+        if kWh < 10 {
+            return String(format: "%.2f", kWh)
+        }
+        return String(format: "%.1f", kWh)
+    }
+
+    private var meterUnitText: String {
+        energyKWh < 1 ? "Wh" : "kWh"
+    }
+
+    private var powerText: String {
+        String(format: "%.1fW", max(0, powerWatts))
+    }
+
+    private var powerLabelText: String {
+        isOnAC ? "输入" : "放电"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 3) {
+                Image(systemName: "bolt.square")
+                    .font(.system(size: 8.5, weight: .semibold))
+                    .foregroundColor(Color(hex: "8C35F2"))
+                    .frame(width: 10)
+                Text("用电表")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundColor(Color(hex: "17213A"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                Text("今日")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundColor(Color(hex: "8C35F2"))
+                    .lineLimit(1)
+                    .padding(.horizontal, 7)
+                    .frame(height: 16)
+                    .background(Color(hex: "F1E8FF"))
+                    .clipShape(Capsule())
+            }
+
+            ElectricMeterDisplay(reading: meterReadingText, unit: meterUnitText)
+
+            HStack(spacing: 5) {
+                MeterValue(label: powerLabelText, value: powerText, color: Color(hex: "2563EB"))
+                MeterValue(label: "周期", value: "\(cycleDays)天", color: Color(hex: "8C35F2"))
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 102, alignment: .topLeading)
+        .background(SoftPanelBackground(cornerRadius: 14))
+    }
+}
+
+private struct ElectricMeterDisplay: View {
+    let reading: String
+    let unit: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text(reading)
+                .font(.system(size: 21, weight: .heavy, design: .rounded))
+                .foregroundColor(Color(hex: "111827"))
+                .lineLimit(1)
+                .minimumScaleFactor(0.50)
+                .monospacedDigit()
+            Text(unit)
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .foregroundColor(Color(hex: "8C35F2"))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 7)
+        .frame(height: 31)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(LinearGradient(colors: [Color(hex: "F5EFFF"), Color(hex: "FFFFFF")],
+                                     startPoint: .topLeading,
+                                     endPoint: .bottomTrailing))
+                .overlay(RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(hex: "D8C6FF"), lineWidth: 0.8))
+        )
+    }
+}
+
+private struct MeterValue: View {
+    let label: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label)
+                .font(.system(size: 6.5, weight: .semibold))
+                .foregroundColor(Color(hex: "5D6B88"))
+            Text(value)
+                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DashboardFooter: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("Hermes")
+            Circle().fill(DashboardStyle.codexGreen).frame(width: 5, height: 5)
+            Text("稳定运行")
+        }
+        .font(DashboardStyle.usageDetailFont)
+        .foregroundColor(DashboardStyle.secondaryText)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 0)
+    }
+}
+
+private enum RecordingActionsStyle: Equatable {
+    case compact
+    case dashboard
+}
+
+private struct RecordingActionsRow: View {
+    @ObservedObject private var recorder = RecordingController.shared
+    var style: RecordingActionsStyle = .compact
+
+    private var audioTitle: String {
+        if recorder.isPreparing { return "准备中" }
+        return recorder.isCallRecording ? "停止监听" : "监听"
+    }
+
+    private var audioIcon: String {
+        recorder.isCallRecording ? "stop.fill" : "mic.fill"
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            RecordingActionButton(title: audioTitle,
+                                  systemImage: audioIcon,
+                                  tint: Color(hex: recorder.isCallRecording ? "FF453A" : "18A957"),
+                                  subtitle: style == .dashboard ? "录音 + 会议板" : nil,
+                                  height: style == .dashboard ? 42 : 32,
+                                  isDisabled: recorder.isPreparing) {
+                recorder.toggleCallRecording()
+            }
+            .help("录制系统声音和麦克风，并打开 Hermes 会议翻译板")
+
+            RecordingActionButton(title: "录屏",
+                                  systemImage: "record.circle",
+                                  tint: Color(hex: "2563EB"),
+                                  subtitle: style == .dashboard ? "点击开始录屏" : nil,
+                                  height: style == .dashboard ? 42 : 32,
+                                  isDisabled: false) {
+                recorder.openScreenRecorderPicker()
+            }
+            .help("打开区域录屏选择器")
+        }
+    }
+}
+
+private struct RecordingActionButton: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    var subtitle: String? = nil
+    var height: CGFloat = 32
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                ZStack {
+                    Circle().fill(tint.opacity(0.10))
+                    Image(systemName: systemImage)
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .frame(width: subtitle == nil ? 16 : 28, height: subtitle == nil ? 16 : 28)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(Color(hex: "5D6B88"))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                    }
+                }
+            }
+            .foregroundColor(tint)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(tint.opacity(isDisabled ? 0.08 : 0.12))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(tint.opacity(isDisabled ? 0.16 : 0.28), lineWidth: 0.8)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.62 : 1)
     }
 }
 
@@ -1794,7 +3298,7 @@ struct SettingsSheet: View {
                             try? SMAppService.mainApp.unregister()
                         }
                     }
-                Text("登录 macOS 时自动启动 Nexus。")
+                Text("登录 macOS 时自动启动 Hermes。")
                     .font(.system(size: 11)).foregroundColor(Color(hex: "666680"))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1802,7 +3306,7 @@ struct SettingsSheet: View {
             VStack(alignment: .leading, spacing: 6) {
                 Toggle("桌面小组件", isOn: $enableWidget)
                     .toggleStyle(SwitchToggleStyle(tint: Color(hex: "30D158")))
-                Text("右键桌面 → 编辑小组件 → 查找 Nexus。")
+                Text("右键桌面 → 编辑小组件 → 查找 Hermes。")
                     .font(.system(size: 11)).foregroundColor(Color(hex: "666680"))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1811,7 +3315,7 @@ struct SettingsSheet: View {
 
             HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Nexus  v\(updater.currentVersion)")
+                    Text("Hermes  v\(updater.currentVersion)")
                         .font(.system(size: 11, weight: .semibold)).foregroundColor(.white)
                     Group {
                         switch updater.updatePhase {

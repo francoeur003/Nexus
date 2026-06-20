@@ -29,6 +29,136 @@ private struct CodexUsageSnapshot {
     var rateLimitObservedAt: Date?
 }
 
+struct PocketWiFiStatus: Equatable {
+    static let defaultMonthlyDataLimitBytes: Int64 = 600_000_000_000
+    private static let monthlyDataLimitKey = "pocketWiFi.monthlyLimitBytes"
+    private static let monthlyRouterBaselineKey = "pocketWiFi.monthlyRouterBaselineBytes"
+    private static let monthlyDisplayBaselineKey = "pocketWiFi.monthlyDisplayBaselineBytes"
+
+    var available = false
+    var networkType = "--"
+    var carrier = "--"
+    var connectStatus = "未连接"
+    var signalBars = 0
+    var signalDBm: Int?
+    var batteryPct: Int?
+    var isCharging = false
+    var connectedDevices = 0
+    var deviceNames: [String] = []
+    var ssid = ""
+    var monthlyReceivedBytes: Int64 = 0
+    var monthlySentBytes: Int64 = 0
+    var updatedAt: Date?
+    var errorText = ""
+
+    var networkLabel: String {
+        guard available else { return "未连接" }
+        let parts = [carrier, networkType].filter { !$0.isEmpty && $0 != "--" }
+        return parts.isEmpty ? "已连接" : parts.joined(separator: " ")
+    }
+
+    var signalText: String {
+        guard available else { return "--" }
+        if let signalDBm {
+            return "\(signalBars)/5 \(signalDBm)dBm"
+        }
+        return "\(signalBars)/5"
+    }
+
+    var batteryText: String {
+        guard let batteryPct else { return "--" }
+        return "\(batteryPct)%"
+    }
+
+    var deviceText: String {
+        available ? "\(connectedDevices) 台" : "--"
+    }
+
+    var monthlyUsedBytes: Int64 {
+        let rawUsed = max(0, monthlyReceivedBytes) + max(0, monthlySentBytes)
+        guard let routerBaseline = Self.configuredInt64(Self.monthlyRouterBaselineKey),
+              let displayBaseline = Self.configuredInt64(Self.monthlyDisplayBaselineKey),
+              routerBaseline > 0,
+              rawUsed >= routerBaseline else {
+            return rawUsed
+        }
+        return max(0, displayBaseline + rawUsed - routerBaseline)
+    }
+
+    var monthlyDataLimitBytes: Int64 {
+        Self.configuredInt64(Self.monthlyDataLimitKey) ?? Self.defaultMonthlyDataLimitBytes
+    }
+
+    var monthlyUsagePercent: Double {
+        guard monthlyDataLimitBytes > 0 else { return 0 }
+        return Double(monthlyUsedBytes) * 100 / Double(monthlyDataLimitBytes)
+    }
+
+    var monthlyProgress: Double {
+        min(1, max(0, monthlyUsagePercent / 100))
+    }
+
+    var monthlyUsageText: String {
+        "\(Self.dataText(monthlyUsedBytes)) / \(Self.dataText(monthlyDataLimitBytes))"
+    }
+
+    var monthlyUsageDetail: String {
+        let remaining = monthlyDataLimitBytes - monthlyUsedBytes
+        if remaining >= 0 {
+            return "剩余 \(Self.dataText(remaining))"
+        }
+        return "已超 \(Self.dataText(abs(remaining)))"
+    }
+
+    var deviceSummary: String {
+        guard available else { return errorText.isEmpty ? "连接随身 WiFi 后自动刷新" : errorText }
+        guard !deviceNames.isEmpty else { return connectedDevices > 0 ? "\(connectedDevices) 台设备已接入" : "暂无链入设备" }
+        let preview = deviceNames.prefix(3).joined(separator: "、")
+        let extra = max(0, connectedDevices - min(deviceNames.count, 3))
+        return extra > 0 ? "\(preview) 等 \(connectedDevices) 台" : preview
+    }
+
+    private static func configuredInt64(_ key: String) -> Int64? {
+        let defaults = UserDefaults.standard
+        if let text = defaults.string(forKey: key),
+           let value = Int64(text.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return value
+        }
+        if let number = defaults.object(forKey: key) as? NSNumber {
+            return number.int64Value
+        }
+        return nil
+    }
+
+    private static func dataText(_ bytes: Int64) -> String {
+        let value = Double(max(0, bytes))
+        if value >= 1_000_000_000_000 {
+            return String(format: "%.2fTB", value / 1_000_000_000_000)
+        }
+        if value >= 1_000_000_000 {
+            return String(format: "%.1fGB", value / 1_000_000_000)
+        }
+        if value >= 1_000_000 {
+            return String(format: "%.0fMB", value / 1_000_000)
+        }
+        return String(format: "%.0fKB", value / 1_000)
+    }
+}
+
+private final class PocketWiFiTrustDelegate: NSObject, URLSessionDelegate {
+    func urlSession(_ session: URLSession,
+                    didReceive challenge: URLAuthenticationChallenge,
+                    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        guard challenge.protectionSpace.host == "192.168.0.1",
+              challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let trust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        completionHandler(.useCredential, URLCredential(trust: trust))
+    }
+}
+
 // MARK: - Model
 
 class SystemStatsModel: ObservableObject {
@@ -36,6 +166,7 @@ class SystemStatsModel: ObservableObject {
 
     // CPU
     @Published var cpuUsage:    Int     = 0
+    @Published var cpuUsageHistory: [Double] = []
     @Published var perCoreCPU: [Double] = []
     @Published var eCoresPct:   Int     = 0
     @Published var pCoresPct:   Int     = 0
@@ -46,6 +177,7 @@ class SystemStatsModel: ObservableObject {
 
     // GPU
     @Published var gpuUsage:    Int     = 0
+    @Published var gpuUsageHistory: [Double] = []
     @Published var gpuMHz:      Int     = 0
     @Published var gpuTemp:     Double  = 0
     @Published var gpuPower:    Double  = 0
@@ -56,6 +188,9 @@ class SystemStatsModel: ObservableObject {
     @Published var sysPower:    Double  = 0
     @Published var totalPower:  Double  = 0
     @Published var dramBW:      Double  = 0
+    @Published var energyMeterPowerWatts: Double = 0
+    @Published var energyMeterKWh: Double = 0
+    @Published var energyMeterCycleDays: Int = 1
 
     // M5+ Super cluster (exposed so PopoverView can show it when present)
     @Published var sClusterPct: Int     = 0
@@ -74,6 +209,7 @@ class SystemStatsModel: ObservableObject {
     @Published var netOutBps:   Int64   = 0
     @Published var currentIP:   String  = "未连接"
     @Published var currentCountry: String = "查询中"
+    @Published var pocketWiFiStatus = PocketWiFiStatus()
 
     // Disk
     @Published var diskReadKBs: Double  = 0
@@ -82,6 +218,7 @@ class SystemStatsModel: ObservableObject {
     @Published var storageTotal:Int64   = 0
     @Published var storagePct:  Int     = 0
     @Published var storagePctPrecise: Double = 0
+    @Published var storagePctHistory: [Double] = []
 
     // Battery — every field
     @Published var batteryPct:       Int     = 0
@@ -99,6 +236,7 @@ class SystemStatsModel: ObservableObject {
     @Published var chargingWatts:    Double  = 0
     @Published var chargerInputWatts:Double  = 0
     @Published var batteryChargeWatts:Double  = 0
+    @Published var batteryDischargeWatts:Double = 0
     @Published var chargerInputHistory: [Double] = []
     @Published var chipPowerHistory: [Double] = []
 
@@ -125,11 +263,17 @@ class SystemStatsModel: ObservableObject {
 
     // Hermes Agent local usage
     @Published var hermesUsageAvailable = false
+    @Published var hermesTodayTokens: Int64 = 0
+    @Published var hermesTodaySeconds: Double = 0
+    @Published var hermesTodayTokensHistory: [Double] = []
+    @Published var hermesTodaySecondsHistory: [Double] = []
+    @Published var hermesTokenRateHistory: [Double] = []
     @Published var hermesTodayTokensText = "今日 -- tok"
     @Published var hermesTodayDurationText = "--"
 
     // Codex local usage / quota
     @Published var codexUsageAvailable   = false
+    @Published var codexTodayTokens: Int64 = 0
     @Published var codexTodayTokensText  = "今日 --"
     @Published var codexPlanType         = "Codex"
     @Published var codexFiveHourRemainingPct = 0
@@ -159,14 +303,19 @@ class SystemStatsModel: ObservableObject {
     private var lastHelperSample = Date.distantPast
     private var lastCountryIP = ""
     private var batterySampleCountdown    = 0
+    private var energyMeterCycleStart = Date()
+    private var energyMeterLastSampleAt: Date?
+    private var energyMeterLastPersistAt = Date.distantPast
     private var timer: Timer?
     private var fastTimer: Timer?
     private var diskTimer: Timer?          // independent timer — keeps ioreg off samplerQueue
     private var hermesUsageTimer: Timer?
     private var codexUsageTimer: Timer?
+    private var pocketWiFiTimer: Timer?
     private var fastTickInFlight = false
     private var hermesUsageInFlight = false
     private var codexUsageInFlight = false
+    private var pocketWiFiInFlight = false
     private var codexUsageLastSignature = ""
     private var codexUsageSnapshotCache = CodexUsageSnapshot()
     private var codexUsageReadOffsets: [String: UInt64] = [:]
@@ -179,6 +328,8 @@ class SystemStatsModel: ObservableObject {
     private let mainSampleInterval: TimeInterval = 1.0
     private let diskSampleInterval: TimeInterval = 3.0
     private let batterySampleEveryTicks = 1
+    private static let energyMeterStorageVersion = 2
+    private static let energyMeterMaxReasonableWatts = 250.0
     private static let codexUsageRecentDays = 7
     private static let codexUsageFileLimit = 80
     private let debugMetricsLogging = false
@@ -187,6 +338,15 @@ class SystemStatsModel: ObservableObject {
     private var helperBootstrapInFlight = false
     private var countryFetchInFlight = false
     private var lastCountryFetch = Date.distantPast
+    private let pocketWiFiBaseURL = "https://192.168.0.1"
+    private let pocketWiFiTrustDelegate = PocketWiFiTrustDelegate()
+    private lazy var pocketWiFiSession: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 3
+        config.timeoutIntervalForResource = 3
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return URLSession(configuration: config, delegate: pocketWiFiTrustDelegate, delegateQueue: nil)
+    }()
 
     private func publishIfChanged<T: Equatable>(_ keyPath: ReferenceWritableKeyPath<SystemStatsModel, T>, _ value: T) {
         if self[keyPath: keyPath] != value {
@@ -236,7 +396,7 @@ class SystemStatsModel: ObservableObject {
         }
         tickDisk()   // seed immediately (async, doesn't block)
 
-        hermesUsageTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+        hermesUsageTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.refreshHermesUsage()
         }
         refreshHermesUsage()
@@ -245,6 +405,13 @@ class SystemStatsModel: ObservableObject {
             self?.refreshCodexUsage()
         }
         refreshCodexUsage(force: true)
+
+        pocketWiFiTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.refreshPocketWiFiStatus()
+        }
+        refreshPocketWiFiStatus()
+
+        loadEnergyMeterState()
 
         // Static system info (includes one ioreg call for GPU core count).
         // Run on a background queue so it doesn't block samplerQueue either.
@@ -256,6 +423,245 @@ class SystemStatsModel: ObservableObject {
         refreshCountryIfNeeded(force: true)
         fetchNativeMetrics()
         fetchBattery()
+    }
+
+    private func refreshPocketWiFiStatus() {
+        guard !pocketWiFiInFlight else { return }
+        pocketWiFiInFlight = true
+
+        let commands = [
+            "mc_modem_main_state",
+            "network_type",
+            "network_provider_fullname",
+            "network_provider",
+            "network_signalbar",
+            "network_lte_rsrp",
+            "lte_rsrp",
+            "Z5g_rsrp",
+            "network_rscp",
+            "ppp_status",
+            "battery_value",
+            "battery_charging",
+            "wifi_access_sta_num",
+            "station_list",
+            "SSID1",
+            "wifi_chip1_ssid1_ssid",
+            "ssid",
+            "flux_monthly_rx_bytes",
+            "flux_monthly_tx_bytes",
+            "monthly_rx_bytes",
+            "monthly_tx_bytes"
+        ]
+
+        var components = URLComponents(string: "\(pocketWiFiBaseURL)/goform/goform_get_cmd_process")
+        components?.queryItems = [
+            URLQueryItem(name: "isTest", value: "false"),
+            URLQueryItem(name: "multi_data", value: "1"),
+            URLQueryItem(name: "cmd", value: commands.joined(separator: ",")),
+            URLQueryItem(name: "_", value: "\(Int(Date().timeIntervalSince1970 * 1000))")
+        ]
+
+        guard let url = components?.url else {
+            updatePocketWiFiUnavailable("状态接口不可用")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 3
+
+        pocketWiFiSession.dataTask(with: request) { [weak self] data, _, error in
+            guard let self = self else { return }
+            defer {
+                DispatchQueue.main.async { [weak self] in
+                    self?.pocketWiFiInFlight = false
+                }
+            }
+
+            guard error == nil,
+                  let data,
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                self.updatePocketWiFiUnavailable("连接 ZTE 随身 WiFi 后自动刷新")
+                return
+            }
+
+            let status = Self.parsePocketWiFiStatus(object)
+            DispatchQueue.main.async { [weak self] in
+                self?.publishIfChanged(\.pocketWiFiStatus, status)
+            }
+        }.resume()
+    }
+
+    private func updatePocketWiFiUnavailable(_ message: String) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.publishIfChanged(\.pocketWiFiStatus, PocketWiFiStatus(errorText: message))
+            self.pocketWiFiInFlight = false
+        }
+    }
+
+    private static func parsePocketWiFiStatus(_ object: [String: Any]) -> PocketWiFiStatus {
+        let modemState = cleanString(object["mc_modem_main_state"])
+        let networkType = cleanString(object["network_type"])
+        let carrier = cleanString(object["network_provider_fullname"]).isEmpty
+            ? cleanString(object["network_provider"])
+            : cleanString(object["network_provider_fullname"])
+        let pppStatus = cleanString(object["ppp_status"])
+        let signalBars = min(5, max(0, number(object["network_signalbar"])?.intValue ?? 0))
+        let signalDBm = number(object["network_lte_rsrp"])?.intValue
+            ?? number(object["lte_rsrp"])?.intValue
+            ?? number(object["Z5g_rsrp"])?.intValue
+            ?? number(object["network_rscp"])?.intValue
+        let batteryPct = number(object["battery_value"]).map { min(100, max(0, $0.intValue)) }
+        let isCharging = cleanString(object["battery_charging"]) == "1"
+        let stationList = object["station_list"] as? [[String: Any]] ?? []
+        let deviceNames = stationList.compactMap { device -> String? in
+            let name = cleanString(device["hostname"])
+            return name.isEmpty ? nil : name
+        }
+        let connectedDevices = max(0, number(object["wifi_access_sta_num"])?.intValue ?? stationList.count)
+        let ssidCandidates = [
+            cleanString(object["SSID1"]),
+            cleanString(object["wifi_chip1_ssid1_ssid"]),
+            cleanString(object["ssid"])
+        ]
+        let ssid = ssidCandidates.first { !$0.isEmpty } ?? ""
+        let monthlyReceivedBytes = int64Value(object["flux_monthly_rx_bytes"])
+            ?? int64Value(object["monthly_rx_bytes"])
+            ?? 0
+        let monthlySentBytes = int64Value(object["flux_monthly_tx_bytes"])
+            ?? int64Value(object["monthly_tx_bytes"])
+            ?? 0
+        let hasRouterPayload = !networkType.isEmpty || batteryPct != nil || !stationList.isEmpty || connectedDevices > 0
+        let isOnline = pppStatus.contains("connected") || modemState == "modem_init_complete"
+
+        return PocketWiFiStatus(
+            available: hasRouterPayload,
+            networkType: networkType.isEmpty ? "--" : networkType,
+            carrier: carrier.isEmpty ? "--" : carrier,
+            connectStatus: hasRouterPayload ? (isOnline ? "已联网" : "未联网") : "未连接",
+            signalBars: signalBars,
+            signalDBm: signalDBm,
+            batteryPct: batteryPct,
+            isCharging: isCharging,
+            connectedDevices: connectedDevices,
+            deviceNames: deviceNames,
+            ssid: ssid,
+            monthlyReceivedBytes: monthlyReceivedBytes,
+            monthlySentBytes: monthlySentBytes,
+            updatedAt: Date(),
+            errorText: hasRouterPayload ? "" : "连接 ZTE 随身 WiFi 后自动刷新"
+        )
+    }
+
+    private static func cleanString(_ value: Any?) -> String {
+        if let text = value as? String {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
+        return ""
+    }
+
+    private static func int64Value(_ value: Any?) -> Int64? {
+        if let number = value as? NSNumber {
+            return number.int64Value
+        }
+        if let text = value as? String {
+            return Int64(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+
+    private func loadEnergyMeterState(now: Date = Date()) {
+        let defaults = UserDefaults.standard
+        let storedVersion = defaults.integer(forKey: "energyMeter.version")
+        let storedStart = defaults.object(forKey: "energyMeter.cycleStart") as? Date
+        let storedKWh = defaults.double(forKey: "energyMeter.kWh")
+        let nextCycleStart = storedStart ?? Calendar.current.startOfDay(for: now)
+        let nextKWh = max(0, storedKWh)
+
+        if storedVersion == Self.energyMeterStorageVersion,
+           isPlausibleEnergyMeterState(cycleStart: nextCycleStart, kWh: nextKWh, now: now) {
+            energyMeterCycleStart = nextCycleStart
+            energyMeterKWh = nextKWh
+        } else {
+            energyMeterCycleStart = Calendar.current.startOfDay(for: now)
+            energyMeterKWh = 0
+        }
+
+        energyMeterLastSampleAt = now
+        rollEnergyMeterCycleIfNeeded(now: now, forcePersist: true)
+    }
+
+    private func accumulateEnergyMeter(powerW: Double, at now: Date = Date()) {
+        rollEnergyMeterCycleIfNeeded(now: now)
+        defer { energyMeterLastSampleAt = now }
+
+        guard let lastSample = energyMeterLastSampleAt else { return }
+        let elapsedSeconds = min(max(now.timeIntervalSince(lastSample), 0), 5)
+        guard elapsedSeconds >= 0.1 else { return }
+
+        let addedKWh = Self.cleanEnergyMeterPower(powerW) * elapsedSeconds / 3_600_000
+        publishIfChanged(\.energyMeterKWh, energyMeterKWh + addedKWh, tolerance: 0.000001)
+
+        if now.timeIntervalSince(energyMeterLastPersistAt) >= 15 {
+            persistEnergyMeterState(now: now)
+        }
+    }
+
+    private func rollEnergyMeterCycleIfNeeded(now: Date, forcePersist: Bool = false) {
+        let cycleSeconds = TimeInterval(max(1, energyMeterCycleDays) * 86_400)
+        let elapsed = now.timeIntervalSince(energyMeterCycleStart)
+        if elapsed < 0 || elapsed >= cycleSeconds {
+            energyMeterCycleStart = Calendar.current.startOfDay(for: now)
+            publishIfChanged(\.energyMeterKWh, 0, tolerance: 0.000001)
+            energyMeterLastSampleAt = now
+            persistEnergyMeterState(now: now)
+            return
+        }
+
+        if forcePersist {
+            persistEnergyMeterState(now: now)
+        }
+    }
+
+    private func persistEnergyMeterState(now: Date = Date()) {
+        let defaults = UserDefaults.standard
+        defaults.set(Self.energyMeterStorageVersion, forKey: "energyMeter.version")
+        defaults.set(energyMeterCycleStart, forKey: "energyMeter.cycleStart")
+        defaults.set(energyMeterKWh, forKey: "energyMeter.kWh")
+        energyMeterLastPersistAt = now
+    }
+
+    private func isPlausibleEnergyMeterState(cycleStart: Date, kWh: Double, now: Date) -> Bool {
+        guard kWh.isFinite, kWh >= 0, cycleStart <= now else { return false }
+        let cycleSeconds = TimeInterval(max(1, energyMeterCycleDays) * 86_400)
+        let elapsedSeconds = now.timeIntervalSince(cycleStart)
+        guard elapsedSeconds >= 0, elapsedSeconds < cycleSeconds else { return false }
+
+        let windowSeconds = max(elapsedSeconds, 60)
+        let maxPlausibleKWh = Self.energyMeterMaxReasonableWatts * windowSeconds / 3_600_000
+        return kWh <= maxPlausibleKWh
+    }
+
+    private static func cleanEnergyMeterPower(_ watts: Double) -> Double {
+        guard watts.isFinite, watts > 0 else { return 0 }
+        return min(watts, energyMeterMaxReasonableWatts)
+    }
+
+    private static func meterPower(
+        onAC: Bool,
+        chargerInputWatts: Double,
+        batteryDischargeWatts: Double,
+        systemPower: Double,
+        chipPower: Double
+    ) -> Double {
+        let candidates = onAC
+            ? [chargerInputWatts, systemPower, chipPower]
+            : [batteryDischargeWatts, systemPower, chipPower]
+        return cleanEnergyMeterPower(candidates.first { $0.isFinite && $0 > 0 } ?? 0)
     }
 
     // MARK: - Tick
@@ -285,7 +691,10 @@ class SystemStatsModel: ObservableObject {
 
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                self.publishIfChanged(\.cpuUsage, Int(cpu.rounded()))
+                let nextCPUUsage = Int(cpu.rounded())
+                let nextStoragePctPrecise = storage.total > 0 ? Double(storage.used) * 100 / Double(storage.total) : Double(storage.pct)
+                self.publishIfChanged(\.cpuUsage, nextCPUUsage)
+                self.publishIfChanged(\.cpuUsageHistory, self.history(self.cpuUsageHistory, adding: Double(nextCPUUsage)))
                 self.publishCoresIfChanged(cores)
                 self.publishIfChanged(\.memUsed, mUsed)
                 self.publishIfChanged(\.memTotal, mTot)
@@ -295,7 +704,8 @@ class SystemStatsModel: ObservableObject {
                 self.publishIfChanged(\.storageUsed, storage.used)
                 self.publishIfChanged(\.storageTotal, storage.total)
                 self.publishIfChanged(\.storagePct, storage.pct)
-                self.publishIfChanged(\.storagePctPrecise, storage.total > 0 ? Double(storage.used) * 100 / Double(storage.total) : Double(storage.pct))
+                self.publishIfChanged(\.storagePctPrecise, nextStoragePctPrecise)
+                self.publishIfChanged(\.storagePctHistory, self.history(self.storagePctHistory, adding: nextStoragePctPrecise))
                 self.publishIfChanged(\.netInBps, max(0, inBps))
                 self.publishIfChanged(\.netOutBps, max(0, outBps))
                 self.publishIfChanged(\.currentIP, Self.currentIPv4Address())
@@ -599,15 +1009,16 @@ class SystemStatsModel: ObservableObject {
             let amperage   = abs(Double(ioInt("Amperage"))) / 1000.0  // A
             let batteryWattsFromCurrent = voltage * amperage
             let telemetry = ioDict("PowerTelemetryData")
-            let telemetryBatteryMW = (telemetry["BatteryPower"] as? NSNumber)?.intValue ?? ioInt("BatteryPower")
-            let telemetryInputMW = (telemetry["SystemPowerIn"] as? NSNumber)?.intValue ?? ioInt("SystemPowerIn")
-            let rawChrgWatts = telemetryBatteryMW > 0
-                ? Double(telemetryBatteryMW) / 1000.0
+            let telemetryBatteryMW = Self.number(telemetry["BatteryPower"])?.doubleValue ?? Double(ioInt("BatteryPower"))
+            let telemetryInputMW = Self.number(telemetry["SystemPowerIn"])?.doubleValue ?? Double(ioInt("SystemPowerIn"))
+            let rawBatteryWatts = telemetryBatteryMW != 0
+                ? abs(telemetryBatteryMW) / 1000.0
                 : batteryWattsFromCurrent
             let rawInputWatts = telemetryInputMW > 0
                 ? Double(telemetryInputMW) / 1000.0
-                : rawChrgWatts
-            let chrgWatts = onAC ? rawChrgWatts : 0
+                : rawBatteryWatts
+            let chrgWatts = onAC ? rawBatteryWatts : 0
+            let dischargeWatts = onAC ? 0 : rawBatteryWatts
             let inputWatts = onAC ? rawInputWatts : 0
 
             let health = desCap > 0 ? Int(Double(maxCapMAh) / Double(desCap) * 100) : 100
@@ -628,6 +1039,7 @@ class SystemStatsModel: ObservableObject {
                 self.publishIfChanged(\.adapterWatts, adWatts, tolerance: 0.5)
                 self.publishIfChanged(\.chargingWatts, chrgWatts, tolerance: 0.3)
                 self.publishIfChanged(\.batteryChargeWatts, chrgWatts, tolerance: 0.3)
+                self.publishIfChanged(\.batteryDischargeWatts, dischargeWatts, tolerance: 0.3)
                 self.publishIfChanged(\.chargerInputWatts, inputWatts, tolerance: 0.05)
             }
         }
@@ -675,9 +1087,7 @@ class SystemStatsModel: ObservableObject {
                 if pData.cpuDieHotspot > 0 { self.publishIfChanged(\.cpuDieHotspot, pData.cpuDieHotspot, tolerance: 1.0) }
                 if pData.gpuTemp > 0 { self.publishIfChanged(\.gpuTemp, pData.gpuTemp, tolerance: 1.0) }
                 let nextFanRPM = Int(pData.fanRPM)
-                if abs(self.fanRPM - nextFanRPM) >= 50 {
-                    self.fanRPM = nextFanRPM
-                }
+                self.publishIfChanged(\.fanRPM, nextFanRPM)
                 self.publishIfChanged(\.fanReason, fanDetails.reasons.first ?? "正在判断当前任务")
                 self.publishIfChanged(\.fanReasons, fanDetails.reasons)
                 self.publishIfChanged(\.fanStopAdvice, fanDetails.stopAdvice)
@@ -697,8 +1107,19 @@ class SystemStatsModel: ObservableObject {
                     : 0
                 self.publishIfChanged(\.chargerInputWatts, nextChargerInputWatts, tolerance: 0.05)
                 self.chargerInputHistory = self.history(self.chargerInputHistory, adding: max(0, nextChargerInputWatts))
+                let nextEnergyMeterPower = Self.meterPower(
+                    onAC: self.batteryOnAC,
+                    chargerInputWatts: nextChargerInputWatts,
+                    batteryDischargeWatts: self.batteryDischargeWatts,
+                    systemPower: nextSysPower,
+                    chipPower: nextTotalPower
+                )
+                self.publishIfChanged(\.energyMeterPowerWatts, nextEnergyMeterPower, tolerance: 0.05)
+                self.accumulateEnergyMeter(powerW: nextEnergyMeterPower)
 
-                self.publishIfChanged(\.gpuUsage, Int(pData.gpuUsage.rounded()))
+                let nextGPUUsage = Int(pData.gpuUsage.rounded())
+                self.publishIfChanged(\.gpuUsage, nextGPUUsage)
+                self.publishIfChanged(\.gpuUsageHistory, self.history(self.gpuUsageHistory, adding: Double(nextGPUUsage)))
                 self.publishIfChanged(\.gpuMHz, Int(pData.gpuFreqMHz))
                 self.publishIfChanged(\.eCoresPct, Int(pData.eClusterActive.rounded()))
                 self.publishIfChanged(\.pCoresPct, Int(pData.pClusterActive.rounded()))
@@ -736,7 +1157,7 @@ class SystemStatsModel: ObservableObject {
             let path  = String(parts[3])
             let name  = (path as NSString).lastPathComponent
             
-            if name == "kernel_task" || name.lowercased().contains("nexus") { continue }
+            if name == "kernel_task" || isSelfMonitorProcess(pid: pid, command: path) { continue }
             
             results.append(ProcInfo(
                 pid: pid,
@@ -746,6 +1167,12 @@ class SystemStatsModel: ObservableObject {
             ))
         }
         return Array(results.prefix(8))
+    }
+
+    private func isSelfMonitorProcess(pid: Int, command: String) -> Bool {
+        if pid == Int(getpid()) { return true }
+        let lower = command.lowercased()
+        return containsAny(lower, ["macmonitor", "nexus.app", "/nexus", "nexus-helper"])
     }
 
     private func inferFanReason(fanRPM: Int, metrics: IOReportData) -> String {
@@ -758,7 +1185,7 @@ class SystemStatsModel: ObservableObject {
         rows: [(pid: Int, cpu: Double, mem: Double, command: String)]
     ) -> (reasons: [String], stopAdvice: String) {
         let candidates = rows.filter { row in
-            row.cpu >= 8 && !row.command.localizedCaseInsensitiveContains("nexus")
+            row.cpu >= 8 && !isSelfMonitorProcess(pid: row.pid, command: row.command)
         }
 
         var reasons: [String] = []
@@ -1071,7 +1498,7 @@ class SystemStatsModel: ObservableObject {
             if let app = heavyApps.first(where: { Int($0.processIdentifier) == proc.pid }) {
                 let mb = Int(proc.mem / 1_048_576)
                 let name = app.localizedName?.lowercased() ?? ""
-                let protected = ["finder", "terminal", "iterm", "codex", "nexus", "系统设置", "system settings"]
+                let protected = ["finder", "terminal", "iterm", "codex", "nexus", "macmonitor", "系统设置", "system settings"]
                     .contains { name.contains($0) }
                 if !protected && (mb > 700 || proc.cpu > 45) {
                     candidates.append((app, mb, proc.cpu))
@@ -1238,9 +1665,20 @@ class SystemStatsModel: ObservableObject {
                 guard let self = self else { return }
                 self.publishIfChanged(\.hermesUsageAvailable, usage.available)
                 if usage.available {
+                    let tokenRate = usage.seconds > 0 ? Double(usage.tokens) / usage.seconds : 0
+                    self.publishIfChanged(\.hermesTodayTokens, usage.tokens)
+                    self.publishIfChanged(\.hermesTodaySeconds, usage.seconds)
+                    self.publishIfChanged(\.hermesTodayTokensHistory, self.history(self.hermesTodayTokensHistory, adding: Double(usage.tokens)))
+                    self.publishIfChanged(\.hermesTodaySecondsHistory, self.history(self.hermesTodaySecondsHistory, adding: usage.seconds))
+                    self.publishIfChanged(\.hermesTokenRateHistory, self.history(self.hermesTokenRateHistory, adding: tokenRate))
                     self.publishIfChanged(\.hermesTodayTokensText, "今日 \(Self.compactTokenText(usage.tokens))")
                     self.publishIfChanged(\.hermesTodayDurationText, Self.compactDurationText(usage.seconds))
                 } else {
+                    self.publishIfChanged(\.hermesTodayTokens, 0)
+                    self.publishIfChanged(\.hermesTodaySeconds, 0)
+                    self.publishIfChanged(\.hermesTodayTokensHistory, [])
+                    self.publishIfChanged(\.hermesTodaySecondsHistory, [])
+                    self.publishIfChanged(\.hermesTokenRateHistory, [])
                     self.publishIfChanged(\.hermesTodayTokensText, "今日 -- tok")
                     self.publishIfChanged(\.hermesTodayDurationText, "--")
                 }
@@ -1296,6 +1734,7 @@ class SystemStatsModel: ObservableObject {
                 guard let self = self else { return }
                 self.codexUsageLastSignature = Self.codexUsageSignature()
                 self.publishIfChanged(\.codexUsageAvailable, snapshot.available)
+                self.publishIfChanged(\.codexTodayTokens, snapshot.todayTokens)
                 self.publishIfChanged(\.codexTodayTokensText, "今日 \(Self.compactTokenText(snapshot.todayTokens))")
                 self.publishIfChanged(\.codexPlanType, Self.displayPlanName(snapshot.planType))
                 self.publishIfChanged(\.codexFiveHourRemainingPct, Self.remainingPct(fromUsed: snapshot.fiveHourUsedPct))

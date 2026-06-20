@@ -80,10 +80,10 @@ private struct StepWelcome: View {
                 )
 
             VStack(spacing: 8) {
-                Text("欢迎使用 Nexus")
+                Text("欢迎使用 Hermes")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
-                Text("为 Apple Silicon 打造的实时处理器、图形处理器、内存、电池和功耗监测。")
+                Text("本地会议记录、系统状态和实时理解面板。")
                     .font(.system(size: 13))
                     .foregroundColor(Color(hex: "ABABC0"))
                     .multilineTextAlignment(.center)
@@ -143,7 +143,7 @@ private struct StepPermission: View {
             VStack(spacing: 6) {
                 Text("一次性权限")
                     .font(.system(size: 20, weight: .bold)).foregroundColor(.white)
-                Text("Nexus 需要一次管理员授权，用于读取图形处理器、温度和功耗数据。")
+                Text("Hermes 需要一次管理员授权，用于读取图形处理器、温度和功耗数据。")
                     .font(.system(size: 12)).foregroundColor(Color(hex:"666680"))
                     .multilineTextAlignment(.center)
             }
@@ -160,7 +160,7 @@ private struct StepPermission: View {
             }
             .padding(.horizontal, 36)
 
-            Text("管理员密码由 macOS 缓存，Nexus 不会保存。")
+            Text("管理员密码由 macOS 缓存，Hermes 不会保存。")
                 .font(.system(size: 10))
                 .foregroundColor(Color(hex:"444455"))
                 .multilineTextAlignment(.center)

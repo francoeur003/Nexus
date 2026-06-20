@@ -40,10 +40,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Check for updates in the background — non-blocking
-        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 5.0) {
-            UpdateChecker.shared.check()
-        }
+        // Hermes is a local fork, so skip the original GitHub updater.
+
+        // Meeting translation is opened only by explicit user action.
     }
 
     // MARK: - Menu bar
@@ -55,14 +54,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             btn.image = statusIcon(cpu: 0, gpu: 0, storage: 0)
             btn.imagePosition = .imageOnly
             btn.contentTintColor = nil
-            btn.toolTip = "Nexus"
-            btn.setAccessibilityLabel("Nexus")
+            btn.toolTip = "MacMonitor Hermes"
+            btn.setAccessibilityLabel("MacMonitor Hermes")
             btn.target = self
             btn.action = #selector(handleClick)
             btn.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
-        popover.contentSize = NSSize(width: 280, height: 500)
+        popover.contentSize = NSSize(width: DashboardStyle.popoverWidth,
+                                     height: DashboardStyle.popoverHeight)
         popover.behavior    = .transient
         popover.animates    = true
         popover.contentViewController = NSHostingController(
@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         btn.imagePosition = .imageOnly
         btn.contentTintColor = nil
         btn.toolTip = "处理器 \(cpu)%  图形 \(gpu)%  存储 \(storage)%"
-        btn.setAccessibilityLabel("Nexus")
+        btn.setAccessibilityLabel("MacMonitor Hermes")
     }
 
     private func statusIcon(cpu: Int, gpu: Int, storage: Int) -> NSImage {
@@ -143,10 +143,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "打开状态面板",
                                 action: #selector(openPopover), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "打开 Hermes 会议翻译板",
+                                action: #selector(openConversationCoachPanel), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "设置…",
                                 action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "退出 Nexus",
+        menu.addItem(NSMenuItem(title: "退出 Hermes",
                                 action: #selector(NSApp.terminate(_:)), keyEquivalent: "q"))
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
@@ -155,6 +157,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func openPopover() {
         if let btn = statusItem?.button { togglePopover(btn) }
+    }
+
+    @MainActor @objc func openConversationCoachPanel() {
+        ConversationCoachWindowController.shared.show()
     }
 
     // MARK: - Welcome window
@@ -186,7 +192,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             backing:      .buffered,
             defer:        false
         )
-        win.title                      = "Nexus 设置"
+        win.title                      = "Hermes 设置"
         win.titlebarAppearsTransparent = true
         win.backgroundColor            = NSColor(Color(hex: "1C1C1E"))
         win.contentViewController      = NSHostingController(

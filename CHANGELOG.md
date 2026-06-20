@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 2.0.61
+
+- Made Nexus a fully independent macOS app identity with bundle id `com.abo.Nexus`.
+- Renamed the shipped executable to `Nexus` and the bundled sensor helper to `nexus-helper`.
+- Replaced the app icon and source logo with the new Nexus `N` brand mark.
+- Updated internal logging, sampler queues, release packaging, and local deployment scripts to use the Nexus identity.
+- This version intentionally requires fresh macOS microphone and screen recording authorization.
+
 ## 2.0.60
 
 - Renamed the shipped macOS app bundle and release assets to `Nexus`.

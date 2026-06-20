@@ -96,8 +96,8 @@ ok "Exported: $(basename "$APP_PATH")"
 # /Users/Shared/Nexus and grants it access for SMC + IOReport reads.
 # If it is missing, brew install --cask nexus fails before first launch.
 # (see issue #4). Compile from helper/ and drop the binary in alongside the app.
-step "Building macmonitor-helper..."
-HELPER_OUT="$APP_PATH/Contents/MacOS/macmonitor-helper"
+step "Building nexus-helper..."
+HELPER_OUT="$APP_PATH/Contents/MacOS/nexus-helper"
 clang -fobjc-arc \
     -framework Foundation -framework IOKit \
     -F/System/Library/PrivateFrameworks -lIOReport \

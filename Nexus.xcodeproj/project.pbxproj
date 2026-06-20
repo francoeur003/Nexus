@@ -365,7 +365,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2060;
+				CURRENT_PROJECT_VERSION = 2061;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -379,12 +379,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.60;
+				MARKETING_VERSION = 2.0.61;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lIOReport",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes;
+				PRODUCT_BUNDLE_IDENTIFIER = com.abo.Nexus;
 				PRODUCT_NAME = Nexus;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -404,7 +404,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2060;
+				CURRENT_PROJECT_VERSION = 2061;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -418,12 +418,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.60;
+				MARKETING_VERSION = 2.0.61;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lIOReport",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes;
+				PRODUCT_BUNDLE_IDENTIFIER = com.abo.Nexus;
 				PRODUCT_NAME = Nexus;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -442,7 +442,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = NexusWidget/NexusWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2060;
+				CURRENT_PROJECT_VERSION = 2061;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NexusWidget/Info.plist;
@@ -452,8 +452,8 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.60;
-				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes.NexusWidget;
+				MARKETING_VERSION = 2.0.61;
+				PRODUCT_BUNDLE_IDENTIFIER = com.abo.Nexus.NexusWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -467,7 +467,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = NexusWidget/NexusWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2060;
+				CURRENT_PROJECT_VERSION = 2061;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NexusWidget/Info.plist;
@@ -477,8 +477,8 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.60;
-				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes.NexusWidget;
+				MARKETING_VERSION = 2.0.61;
+				PRODUCT_BUNDLE_IDENTIFIER = com.abo.Nexus.NexusWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;

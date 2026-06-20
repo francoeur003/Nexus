@@ -9,8 +9,8 @@
 #   brew upgrade --cask nexus
 
 cask "nexus" do
-  version "1.0.1"
-  sha256 "a37a916c6f46e9accabcc51d91176861e7d96e08025981a7738bf61d49f1bcea"
+  version "2.0.61"
+  sha256 "28fb9921de49f87fdcef0dd18486dc00e726a917c65eac73cadefac3e110085c"
 
   url "https://github.com/francoeur003/Nexus/releases/download/v#{version}/Nexus-#{version}.dmg"
   name "Nexus"
@@ -49,13 +49,13 @@ cask "nexus" do
   EOS
 
   # Uninstall: quit app and remove helper
-  uninstall quit:   "com.francoeur003.Nexus",
+  uninstall quit:   "com.abo.Nexus",
             delete: "/Users/Shared/Nexus/nexus-helper"
 
   zap trash: [
-    "~/Library/Preferences/com.francoeur003.Nexus.plist",
+    "~/Library/Preferences/com.abo.Nexus.plist",
     "~/Library/Application Support/Nexus",
-    "~/Library/Caches/com.francoeur003.Nexus",
+    "~/Library/Caches/com.abo.Nexus",
     "/etc/sudoers.d/nexus-helper",
   ]
 end

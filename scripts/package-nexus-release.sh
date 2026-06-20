@@ -2,10 +2,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${NEXUS_VERSION:-2.0.60}"
-BUILD="${NEXUS_BUILD:-2060}"
+VERSION="${NEXUS_VERSION:-2.0.61}"
+BUILD="${NEXUS_BUILD:-2061}"
 APP_SOURCE="${APP_SOURCE:-/Applications/Nexus.app}"
-SIGN_IDENTITY="${SIGN_IDENTITY:-MacMonitor Local Code Signing}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Nexus Local Code Signing}"
 DIST="$ROOT/dist/nexus-release-$VERSION"
 STAGING="$DIST/staging"
 APP_NAME="Nexus.app"
@@ -23,6 +23,8 @@ mkdir -p "$STAGING"
 ditto "$APP_SOURCE" "$STAGING/$APP_NAME"
 
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Nexus" "$STAGING/$APP_NAME/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable Nexus" "$STAGING/$APP_NAME/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.abo.Nexus" "$STAGING/$APP_NAME/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName Nexus" "$STAGING/$APP_NAME/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$STAGING/$APP_NAME/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" "$STAGING/$APP_NAME/Contents/Info.plist"
@@ -30,8 +32,11 @@ ditto "$APP_SOURCE" "$STAGING/$APP_NAME"
 /usr/libexec/PlistBuddy -c "Set :NSScreenCaptureUsageDescription Nexus 需要录屏与系统录音权限，用于记录会议和电脑声音。" "$STAGING/$APP_NAME/Contents/Info.plist"
 
 if security find-identity -v -p codesigning | grep -Fq "\"$SIGN_IDENTITY\""; then
-  codesign --force --deep --sign "$SIGN_IDENTITY" "$STAGING/$APP_NAME"
+  CODESIGN_IDENTITY="$SIGN_IDENTITY"
+else
+  CODESIGN_IDENTITY="-"
 fi
+codesign --force --deep --sign "$CODESIGN_IDENTITY" "$STAGING/$APP_NAME"
 codesign --verify --deep --strict --verbose=2 "$STAGING/$APP_NAME"
 
 ln -s /Applications "$STAGING/Applications"

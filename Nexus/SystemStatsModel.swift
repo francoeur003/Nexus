@@ -162,7 +162,7 @@ private final class PocketWiFiTrustDelegate: NSObject, URLSessionDelegate {
 // MARK: - Model
 
 class SystemStatsModel: ObservableObject {
-    private static let logger = Logger(subsystem: "com.francoeur003.Nexus", category: "metrics")
+    private static let logger = Logger(subsystem: "com.abo.Nexus", category: "metrics")
 
     // CPU
     @Published var cpuUsage:    Int     = 0
@@ -322,8 +322,8 @@ class SystemStatsModel: ObservableObject {
     private var codexUsageLatestRateLimitDate = Date.distantPast
     private var codexUsageLatestRateLimitPriority = -1
     private var codexUsageDay = Calendar.current.startOfDay(for: Date())
-    private let samplerQueue = DispatchQueue(label: "com.francoeur003.Nexus.sampler", qos: .utility)
-    private let lightSamplerQueue = DispatchQueue(label: "com.francoeur003.Nexus.lightSampler", qos: .userInitiated)
+    private let samplerQueue = DispatchQueue(label: "com.abo.Nexus.sampler", qos: .utility)
+    private let lightSamplerQueue = DispatchQueue(label: "com.abo.Nexus.lightSampler", qos: .userInitiated)
     private let lightSampleInterval: TimeInterval = 1.0
     private let mainSampleInterval: TimeInterval = 1.0
     private let diskSampleInterval: TimeInterval = 3.0

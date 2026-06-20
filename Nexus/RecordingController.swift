@@ -1436,7 +1436,7 @@ private struct WhisperSegment: Decodable {
 
 @available(macOS 15.0, *)
 private final class AudioOnlyWriter: NSObject, SCStreamOutput, @unchecked Sendable {
-    let sampleQueue = DispatchQueue(label: "rybo.Macmonitor.audioOnlyWriter")
+    let sampleQueue = DispatchQueue(label: "com.abo.Nexus.audioOnlyWriter")
 
     private let writer: AVAssetWriter
     private let systemInput: AVAssetWriterInput

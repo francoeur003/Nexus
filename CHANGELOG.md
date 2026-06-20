@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.0.60
+
+- Renamed the shipped macOS app bundle and release assets to `Nexus`.
+- Kept the existing bundle identifier and stable signing path to preserve local macOS permissions.
+
 ## 2.0.59
 
 - Redesigned the Hermes Agent popover around the current compact widget UI.

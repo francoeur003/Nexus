@@ -54,8 +54,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             btn.image = statusIcon(cpu: 0, gpu: 0, storage: 0)
             btn.imagePosition = .imageOnly
             btn.contentTintColor = nil
-            btn.toolTip = "MacMonitor Hermes"
-            btn.setAccessibilityLabel("MacMonitor Hermes")
+            btn.toolTip = "Nexus"
+            btn.setAccessibilityLabel("Nexus")
             btn.target = self
             btn.action = #selector(handleClick)
             btn.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         btn.imagePosition = .imageOnly
         btn.contentTintColor = nil
         btn.toolTip = "处理器 \(cpu)%  图形 \(gpu)%  存储 \(storage)%"
-        btn.setAccessibilityLabel("MacMonitor Hermes")
+        btn.setAccessibilityLabel("Nexus")
     }
 
     private func statusIcon(cpu: Int, gpu: Int, storage: Int) -> NSImage {

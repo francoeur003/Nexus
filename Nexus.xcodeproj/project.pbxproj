@@ -365,27 +365,27 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2059;
+				CURRENT_PROJECT_VERSION = 2060;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 					GENERATE_INFOPLIST_FILE = YES;
 					INFOPLIST_KEY_LSUIElement = YES;
-					INFOPLIST_KEY_NSMicrophoneUsageDescription = "MacMonitor Hermes 需要麦克风权限，用于录制你的声音和通话声音。";
+					INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nexus 需要麦克风权限，用于录制你的声音和通话声音。";
 					INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Hermes 需要语音识别权限，用于实时把会议对话转换成文字。";
 					INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.59;
+				MARKETING_VERSION = 2.0.60;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lIOReport",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes;
-				PRODUCT_NAME = "MacMonitor Hermes";
+				PRODUCT_NAME = Nexus;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -404,27 +404,27 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2059;
+				CURRENT_PROJECT_VERSION = 2060;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 					GENERATE_INFOPLIST_FILE = YES;
 					INFOPLIST_KEY_LSUIElement = YES;
-					INFOPLIST_KEY_NSMicrophoneUsageDescription = "MacMonitor Hermes 需要麦克风权限，用于录制你的声音和通话声音。";
+					INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nexus 需要麦克风权限，用于录制你的声音和通话声音。";
 					INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Hermes 需要语音识别权限，用于实时把会议对话转换成文字。";
 					INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.59;
+				MARKETING_VERSION = 2.0.60;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lIOReport",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes;
-				PRODUCT_NAME = "MacMonitor Hermes";
+				PRODUCT_NAME = Nexus;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -442,7 +442,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = NexusWidget/NexusWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2059;
+				CURRENT_PROJECT_VERSION = 2060;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NexusWidget/Info.plist;
@@ -452,7 +452,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.59;
+				MARKETING_VERSION = 2.0.60;
 				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes.NexusWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -467,7 +467,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = NexusWidget/NexusWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2059;
+				CURRENT_PROJECT_VERSION = 2060;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NexusWidget/Info.plist;
@@ -477,7 +477,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.59;
+				MARKETING_VERSION = 2.0.60;
 				PRODUCT_BUNDLE_IDENTIFIER = rybo.Macmonitor.Hermes.NexusWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

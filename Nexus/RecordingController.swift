@@ -1531,9 +1531,9 @@ private enum RecordingError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .microphoneDenied:
-            return "需要允许 MacMonitor Hermes 使用麦克风，才能同时录到你的声音。"
+            return "需要允许 Nexus 使用麦克风，才能同时录到你的声音。"
         case .screenCaptureDenied:
-            return "需要在“录屏与系统录音”里允许 MacMonitor Hermes。授权后请重新打开 MacMonitor Hermes。"
+            return "需要在“录屏与系统录音”里允许 Nexus。授权后请重新打开 Nexus。"
         case .microphoneRecorderFailed:
             return "麦克风监听启动失败。"
         case .noDisplay:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-#  MacMonitor Hermes — DMG Builder
+#  Nexus — DMG Builder
 #  Creates a drag-to-Applications DMG for distribution
 #  Usage: ./scripts/build-dmg.sh
 # ─────────────────────────────────────────────────────────────────────────────
@@ -8,8 +8,8 @@ set -euo pipefail
 
 PROJECT="Nexus.xcodeproj"
 SCHEME="Nexus"
-APP_NAME="MacMonitor Hermes"
-DMG_SLUG="MacMonitor-Hermes"
+APP_NAME="Nexus"
+DMG_SLUG="Nexus"
 # Version resolution order:
 #   1. NEXUS_VERSION env var (set by GitHub Actions from the git tag)
 #   2. Latest git tag (strips leading "v")
@@ -21,7 +21,7 @@ EXPORT="$DIST/export"
 STAGING="$DIST/dmg-staging"
 DMG_TEMP="$DIST/temp.dmg"
 DMG_FINAL="$DIST/$DMG_SLUG-$VERSION.dmg"
-VOL_NAME="MacMonitor Hermes $VERSION"
+VOL_NAME="Nexus $VERSION"
 
 G='\033[0;32m' B='\033[0;34m' Y='\033[1;33m' R='\033[0;31m'
 W='\033[1;37m' D='\033[2m' NC='\033[0m' BOLD='\033[1m'
@@ -31,7 +31,7 @@ ok()   { printf "  ${G}✓${NC}  %s\n" "$1"; }
 fail() { printf "  ${R}✗${NC}  %s\n" "$1"; exit 1; }
 
 echo ""
-echo -e "${BOLD}${W}  MacMonitor Hermes DMG Builder  v${VERSION}${NC}"
+echo -e "${BOLD}${W}  Nexus DMG Builder  v${VERSION}${NC}"
 echo -e "${D}  ────────────────────────────────────${NC}"
 echo ""
 
@@ -93,7 +93,7 @@ ok "Exported: $(basename "$APP_PATH")"
 
 # ── Build privileged helper and embed it in the app bundle ───────────────────
 # The Homebrew Cask postflight copies this binary out of Contents/MacOS/ into
-# /Users/Shared/MacMonitorHermes and grants it access for SMC + IOReport reads.
+# /Users/Shared/Nexus and grants it access for SMC + IOReport reads.
 # If it is missing, brew install --cask nexus fails before first launch.
 # (see issue #4). Compile from helper/ and drop the binary in alongside the app.
 step "Building macmonitor-helper..."
@@ -193,5 +193,5 @@ echo ""
 echo -e "  ${W}Output:${NC}   $DMG_FINAL  (${SIZE})"
 echo ""
 echo -e "  ${D}To release on GitHub:${NC}"
-echo -e "  ${D}  gh release create v${VERSION} \"$DMG_FINAL\" --title \"MacMonitor Hermes v${VERSION}\" --notes-file CHANGELOG.md${NC}"
+echo -e "  ${D}  gh release create v${VERSION} \"$DMG_FINAL\" --title \"Nexus v${VERSION}\" --notes-file CHANGELOG.md${NC}"
 echo ""

@@ -40,8 +40,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            dist/MacMonitor-Hermes-*.dmg \
-            dist/MacMonitor-Hermes.dmg \
-            --title "MacMonitor Hermes $GITHUB_REF_NAME" \
+            dist/Nexus-*.dmg \
+            dist/Nexus.dmg \
+            --title "Nexus $GITHUB_REF_NAME" \
             --generate-notes \
             --verify-tag

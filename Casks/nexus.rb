@@ -9,8 +9,8 @@
 #   brew upgrade --cask nexus
 
 cask "nexus" do
-  version "2.0.61"
-  sha256 "28fb9921de49f87fdcef0dd18486dc00e726a917c65eac73cadefac3e110085c"
+  version "2.0.62"
+  sha256 "b87bb99df61fac0d2567ad7faecab59b3953fa737b8c9586cbc459f2ca8022c1"
 
   url "https://github.com/francoeur003/Nexus/releases/download/v#{version}/Nexus-#{version}.dmg"
   name "Nexus"

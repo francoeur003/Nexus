@@ -31,6 +31,8 @@ private struct CodexUsageSnapshot {
 
 struct PocketWiFiStatus: Equatable {
     static let defaultMonthlyDataLimitBytes: Int64 = 600_000_000_000
+    static let defaultMonthlyRouterBaselineBytes: Int64 = 609_474_439_869
+    static let defaultMonthlyDisplayBaselineBytes: Int64 = 395_650_000_000
     private static let monthlyDataLimitKey = "pocketWiFi.monthlyLimitBytes"
     private static let monthlyRouterBaselineKey = "pocketWiFi.monthlyRouterBaselineBytes"
     private static let monthlyDisplayBaselineKey = "pocketWiFi.monthlyDisplayBaselineBytes"
@@ -76,9 +78,9 @@ struct PocketWiFiStatus: Equatable {
 
     var monthlyUsedBytes: Int64 {
         let rawUsed = max(0, monthlyReceivedBytes) + max(0, monthlySentBytes)
-        guard let routerBaseline = Self.configuredInt64(Self.monthlyRouterBaselineKey),
-              let displayBaseline = Self.configuredInt64(Self.monthlyDisplayBaselineKey),
-              routerBaseline > 0,
+        let routerBaseline = Self.configuredInt64(Self.monthlyRouterBaselineKey) ?? Self.defaultMonthlyRouterBaselineBytes
+        let displayBaseline = Self.configuredInt64(Self.monthlyDisplayBaselineKey) ?? Self.defaultMonthlyDisplayBaselineBytes
+        guard routerBaseline > 0,
               rawUsed >= routerBaseline else {
             return rawUsed
         }
@@ -136,7 +138,7 @@ struct PocketWiFiStatus: Equatable {
             return String(format: "%.2fTB", value / 1_000_000_000_000)
         }
         if value >= 1_000_000_000 {
-            return String(format: "%.1fGB", value / 1_000_000_000)
+            return String(format: "%.2fGB", value / 1_000_000_000)
         }
         if value >= 1_000_000 {
             return String(format: "%.0fMB", value / 1_000_000)

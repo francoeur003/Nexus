@@ -96,7 +96,7 @@ enum DashboardStyle {
     static let outerSpacing: CGFloat = 6
     static let contentPaddingX: CGFloat = 10
     static let contentPaddingTop: CGFloat = 8
-    static let contentPaddingBottom: CGFloat = 4
+    static let contentPaddingBottom: CGFloat = 0
 
     static let panelRadius: CGFloat = 16
     static let tileRadius: CGFloat = 12
@@ -611,8 +611,6 @@ private struct CompactStatusSection: View, Equatable {
             }
 
             PocketWiFiStatusCard(status: snapshot.pocketWiFiStatus)
-
-            DashboardFooter()
         }
     }
 }

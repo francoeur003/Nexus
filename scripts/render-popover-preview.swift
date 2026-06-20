@@ -104,12 +104,14 @@ struct PopoverPreviewRenderer {
             connectedDevices: 1,
             deviceNames: ["Abo MacBook"],
             ssid: "阿波的随身WIFI",
-            monthlyReceivedBytes: 391_000_000_000,
+            monthlyReceivedBytes: 395_650_000_000,
             monthlySentBytes: 0,
             updatedAt: Date(),
             errorText: ""
         )
         UserDefaults.standard.set("600000000000", forKey: "pocketWiFi.monthlyLimitBytes")
+        UserDefaults.standard.set("609474439869", forKey: "pocketWiFi.monthlyRouterBaselineBytes")
+        UserDefaults.standard.set("395650000000", forKey: "pocketWiFi.monthlyDisplayBaselineBytes")
         return model
     }
 }

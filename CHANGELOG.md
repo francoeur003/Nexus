@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.0.62
+
+- Calibrated pocket WiFi monthly usage to 600GB total and 395.65GB used.
+- Removed the bottom Hermes status footer to eliminate the extra blank space below the WiFi module.
+
 ## 2.0.61
 
 - Made Nexus a fully independent macOS app identity with bundle id `com.abo.Nexus`.

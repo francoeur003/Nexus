@@ -139,6 +139,10 @@ enum DashboardStyle {
     static let fanReasonProgressWidth: CGFloat = 44
     static let fanReasonProgressHeight: CGFloat = 4
     static let fanReasonPercentWidth: CGFloat = 26
+    static let bluetoothRowHeight: CGFloat = 28
+    static let bluetoothTileHeight: CGFloat = 42
+    static let bluetoothGridSpacing: CGFloat = 4
+    static let bluetoothBatteryPillWidth: CGFloat = 58
 
     static let accentBlue = Color(hex: "2563EB")
     static let accentGreen = Color(hex: "18A957")
@@ -465,6 +469,7 @@ private struct CompactStatusSnapshot: Equatable {
     let currentCountry: String
     let batteryPct: Int
     let pocketWiFiStatus: PocketWiFiStatus
+    let bluetoothDevices: [BluetoothDeviceStatus]
 
     init(_ model: SystemStatsModel) {
         codexUsageAvailable = model.codexUsageAvailable
@@ -510,6 +515,7 @@ private struct CompactStatusSnapshot: Equatable {
         currentCountry = model.currentCountry
         batteryPct = model.batteryPct
         pocketWiFiStatus = model.pocketWiFiStatus
+        bluetoothDevices = Array(model.bluetoothDevices.filter(\.connected).prefix(6))
     }
 
     var primaryTodayTokens: Int64 {
@@ -604,29 +610,59 @@ private struct CompactStatusSection: View, Equatable {
         VStack(alignment: .leading, spacing: DashboardStyle.sectionSpacing) {
             TopMetricCards(snapshot: snapshot)
 
+            BluetoothDevicesCard(devices: snapshot.bluetoothDevices)
+
             SystemResourceCard(snapshot: snapshot)
 
             if snapshot.fanRPM > 0 {
                 FanReasonPanel(reasons: snapshot.fanReasons, stopAdvice: snapshot.fanStopAdvice)
             }
 
-            PocketWiFiStatusCard(status: snapshot.pocketWiFiStatus)
+            PocketWiFiStatusCard(status: snapshot.pocketWiFiStatus,
+                                 netInBps: snapshot.netInBps,
+                                 netOutBps: snapshot.netOutBps)
+
         }
     }
 }
 
 private struct PocketWiFiStatusCard: View {
     let status: PocketWiFiStatus
+    let netInBps: Int64
+    let netOutBps: Int64
 
     private var accent: Color {
-        status.available ? DashboardStyle.accentBlue : DashboardStyle.mutedText
+        if status.available { return DashboardStyle.accentBlue }
+        if status.localWiFi.connected { return DashboardStyle.accentGreen }
+        return DashboardStyle.mutedText
     }
 
     private var titleText: String {
+        if !status.available, status.localWiFi.connected {
+            return status.localWiFi.displayName
+        }
         let ssid = status.ssid.trimmingCharacters(in: .whitespacesAndNewlines)
         if ssid.isEmpty { return "随身 WIFI" }
         if ssid.contains("阿波") { return "阿波随身 WIFI" }
         return ssid
+    }
+
+    private var statusText: String {
+        if status.available { return status.connectStatus }
+        if status.localWiFi.connected { return status.localWiFi.qualityText }
+        return "未连接"
+    }
+
+    private var headerIcon: String {
+        status.available ? "wifi.router" : "wifi"
+    }
+
+    private var localSignalColor: Color {
+        guard status.localWiFi.connected else { return DashboardStyle.mutedText }
+        if status.localWiFi.signalQualityPercent >= 64 { return DashboardStyle.accentGreen }
+        if status.localWiFi.signalQualityPercent >= 45 { return DashboardStyle.accentBlue }
+        if status.localWiFi.signalQualityPercent >= 26 { return DashboardStyle.accentOrange }
+        return DashboardStyle.accentRed
     }
 
     private var signalColor: Color {
@@ -644,34 +680,72 @@ private struct PocketWiFiStatusCard: View {
         return DashboardStyle.accentBlue
     }
 
+    private static func shortRate(_ bps: Int64) -> String {
+        let value = Double(max(0, bps))
+        if value >= 1_048_576 {
+            return String(format: "%.1fM", value / 1_048_576)
+        }
+        if value >= 1_024 {
+            return String(format: "%.0fK", value / 1_024)
+        }
+        return "\(Int(value))B"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DashboardStyle.tileSpacing) {
             HStack(spacing: 7) {
-                PanelIcon(systemImage: "wifi.router", tint: accent)
+                PanelIcon(systemImage: headerIcon, tint: accent)
 
-                Button {
-                    if let url = URL(string: "https://192.168.0.1") {
-                        NSWorkspace.shared.open(url)
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(titleText)
-                            .font(DashboardStyle.wifiTitleFont)
-                            .foregroundColor(DashboardStyle.titleText)
-                            .lineLimit(1)
-                        Image(systemName: "arrow.up.forward")
-                            .font(DashboardStyle.wifiLinkArrowFont)
-                            .foregroundColor(DashboardStyle.secondaryText)
+                Group {
+                    if status.available {
+                        Button {
+                            if let url = URL(string: "https://192.168.0.1") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            titleContent
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        titleContent
                     }
                 }
-                .buttonStyle(.plain)
                 .layoutPriority(1)
 
                 Spacer(minLength: 0)
 
-                PanelStatusPill(text: status.connectStatus, tint: accent)
+                PanelStatusPill(text: statusText, tint: accent)
             }
 
+            if status.available {
+                pocketRouterContent
+            } else if status.localWiFi.connected {
+                externalWiFiContent
+            } else {
+                disconnectedContent
+            }
+        }
+        .padding(.horizontal, DashboardStyle.panelPaddingX)
+        .padding(.vertical, DashboardStyle.panelPaddingY)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+
+    private var titleContent: some View {
+        HStack(spacing: 4) {
+            Text(titleText)
+                .font(DashboardStyle.wifiTitleFont)
+                .foregroundColor(DashboardStyle.titleText)
+                .lineLimit(1)
+            if status.available {
+                Image(systemName: "arrow.up.forward")
+                    .font(DashboardStyle.wifiLinkArrowFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+            }
+        }
+    }
+
+    private var pocketRouterContent: some View {
+        VStack(alignment: .leading, spacing: DashboardStyle.tileSpacing) {
             HStack(spacing: DashboardStyle.tileSpacing) {
                 PocketWiFiMetric(title: "网络",
                                  value: status.networkLabel,
@@ -693,9 +767,56 @@ private struct PocketWiFiStatusCard: View {
 
             PocketWiFiUsageBar(status: status)
         }
-        .padding(.horizontal, DashboardStyle.panelPaddingX)
-        .padding(.vertical, DashboardStyle.panelPaddingY)
-        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+
+    private var externalWiFiContent: some View {
+        VStack(alignment: .leading, spacing: DashboardStyle.tileSpacing) {
+            HStack(spacing: DashboardStyle.tileSpacing) {
+                PocketWiFiMetric(title: "网络",
+                                 value: status.localWiFi.displayName,
+                                 systemImage: "wifi",
+                                 tint: DashboardStyle.accentBlue)
+                PocketWiFiMetric(title: "信号",
+                                 value: status.localWiFi.signalText,
+                                 systemImage: "chart.bar.fill",
+                                 tint: localSignalColor)
+                PocketWiFiMetric(title: "实时",
+                                 value: "↓\(Self.shortRate(netInBps)) ↑\(Self.shortRate(netOutBps))",
+                                 systemImage: "arrow.up.arrow.down",
+                                 tint: DashboardStyle.accentPurple)
+                PocketWiFiMetric(title: "链路",
+                                 value: status.localWiFi.linkRateText,
+                                 systemImage: "speedometer",
+                                 tint: DashboardStyle.accentBlue)
+            }
+
+            ExternalWiFiQualityBar(status: status.localWiFi, tint: localSignalColor)
+        }
+    }
+
+    private var disconnectedContent: some View {
+        VStack(alignment: .leading, spacing: DashboardStyle.tileSpacing) {
+            HStack(spacing: DashboardStyle.tileSpacing) {
+                PocketWiFiMetric(title: "网络",
+                                 value: "未连接",
+                                 systemImage: "wifi.slash",
+                                 tint: DashboardStyle.mutedText)
+                PocketWiFiMetric(title: "信号",
+                                 value: "--",
+                                 systemImage: "chart.bar.fill",
+                                 tint: DashboardStyle.mutedText)
+                PocketWiFiMetric(title: "电量",
+                                 value: "--",
+                                 systemImage: "battery.75percent",
+                                 tint: DashboardStyle.mutedText)
+                PocketWiFiMetric(title: "链入",
+                                 value: "--",
+                                 systemImage: "person.2.fill",
+                                 tint: DashboardStyle.mutedText)
+            }
+
+            PocketWiFiHintBar(text: status.errorText.isEmpty ? "连接阿波随身 WiFi 后显示流量和设备" : status.errorText)
+        }
     }
 }
 
@@ -778,6 +899,82 @@ private struct PocketWiFiUsageBar: View {
     }
 }
 
+private struct ExternalWiFiQualityBar: View {
+    let status: LocalWiFiStatus
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 5) {
+                Text("连接质量")
+                    .font(DashboardStyle.smallLabelFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                Spacer(minLength: 0)
+                Text("\(status.qualityText) \(status.signalQualityPercent)%")
+                    .font(DashboardStyle.usagePercentFont)
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .monospacedDigit()
+                if let noise = status.noiseDBm {
+                    Text("噪声 \(noise)dBm")
+                        .font(DashboardStyle.usageDetailFont)
+                        .foregroundColor(DashboardStyle.secondaryText)
+                        .lineLimit(1)
+                }
+            }
+
+            GeometryReader { geo in
+                let fillWidth = geo.size.width * CGFloat(min(1, max(0, Double(status.signalQualityPercent) / 100)))
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius)
+                        .fill(DashboardStyle.track)
+                    RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius)
+                        .fill(LinearGradient(colors: [tint.opacity(0.55), tint.opacity(0.9)],
+                                             startPoint: .leading,
+                                             endPoint: .trailing))
+                        .frame(width: fillWidth, alignment: .leading)
+                        .clipShape(RoundedRectangle(cornerRadius: DashboardStyle.usageBarRadius))
+                }
+            }
+            .frame(height: DashboardStyle.usageBarHeight)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+    }
+}
+
+private struct PocketWiFiHintBar: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "info.circle.fill")
+                .font(DashboardStyle.metricIconFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+            Text(text)
+                .font(DashboardStyle.usageDetailFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
+        )
+    }
+}
+
 private struct PocketWiFiMetric: View {
     let title: String
     let value: String
@@ -813,6 +1010,228 @@ private struct PocketWiFiMetric: View {
                 .overlay(RoundedRectangle(cornerRadius: DashboardStyle.tileRadius)
                     .stroke(DashboardStyle.tileStroke, lineWidth: 0.8))
         )
+    }
+}
+
+private struct BluetoothDevicesCard: View {
+    let devices: [BluetoothDeviceStatus]
+
+    private var connectedDevices: [BluetoothDeviceStatus] {
+        devices.filter(\.connected)
+    }
+
+    private var visibleDevices: [BluetoothDeviceStatus] {
+        Array(connectedDevices.prefix(4))
+    }
+
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: DashboardStyle.bluetoothGridSpacing),
+            GridItem(.flexible(), spacing: DashboardStyle.bluetoothGridSpacing)
+        ]
+    }
+
+    private var connectedCount: Int {
+        connectedDevices.count
+    }
+
+    private var trailingText: String {
+        if connectedDevices.isEmpty { return "无设备" }
+        return "\(connectedCount) 台"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DashboardStyle.systemStackSpacing) {
+            PanelHeader(title: "我的设备",
+                        systemImage: "dot.radiowaves.left.and.right",
+                        tint: DashboardStyle.accentPurple,
+                        trailingText: trailingText)
+
+            if connectedDevices.isEmpty {
+                BluetoothEmptyRow()
+            } else {
+                VStack(spacing: DashboardStyle.bluetoothGridSpacing) {
+                    LazyVGrid(columns: gridColumns,
+                              alignment: .leading,
+                              spacing: DashboardStyle.bluetoothGridSpacing) {
+                        ForEach(visibleDevices) { device in
+                            BluetoothDeviceTile(device: device)
+                        }
+                    }
+                    if connectedDevices.count > visibleDevices.count {
+                        BluetoothMoreRow(count: connectedDevices.count - visibleDevices.count)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, DashboardStyle.panelPaddingX)
+        .padding(.vertical, DashboardStyle.densePanelPaddingY)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+    }
+}
+
+private struct BluetoothDeviceTile: View {
+    let device: BluetoothDeviceStatus
+
+    private var tint: Color {
+        guard let pct = device.batteryPct else {
+            return device.connected ? DashboardStyle.accentBlue : DashboardStyle.mutedText
+        }
+        if pct <= 20 { return DashboardStyle.accentRed }
+        if pct <= 45 { return DashboardStyle.accentOrange }
+        return DashboardStyle.accentGreen
+    }
+
+    private var iconName: String {
+        let text = "\(device.kind) \(device.displayName)".lowercased()
+        if text.contains("airpods") || text.contains("headphone") {
+            return "headphones"
+        }
+        if text.contains("keyboard") {
+            return "keyboard"
+        }
+        if text.contains("mouse") {
+            return "computermouse"
+        }
+        if text.contains("trackpad") || text.contains("触控") || text.contains("妙控板") {
+            return "rectangle.and.hand.point.up.left"
+        }
+        return "dot.radiowaves.left.and.right"
+    }
+
+    private var detailText: String {
+        if let rssi = device.rssiDBm {
+            return "\(device.statusText) · \(rssi)dBm"
+        }
+        return device.statusText
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 5) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(tint.opacity(0.10))
+                    Image(systemName: iconName)
+                        .font(DashboardStyle.metricIconFont)
+                        .foregroundColor(tint)
+                }
+                .frame(width: 18, height: 18)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(device.displayName)
+                        .font(DashboardStyle.tinyLabelFont)
+                        .foregroundColor(DashboardStyle.titleText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.55)
+                    Text(detailText)
+                        .font(DashboardStyle.tinyLabelFont)
+                        .foregroundColor(DashboardStyle.secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.62)
+                }
+                .layoutPriority(1)
+
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 5) {
+                Text(device.batteryText)
+                    .font(DashboardStyle.tinyLabelFont)
+                    .foregroundColor(device.batteryPct == nil ? DashboardStyle.secondaryText : tint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.52)
+                    .monospacedDigit()
+
+                GeometryReader { geo in
+                    let pct = CGFloat(max(0, min(device.batteryPct ?? 0, 100))) / 100
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(DashboardStyle.track)
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(tint.opacity(device.batteryPct == nil ? 0.35 : 0.85))
+                            .frame(width: geo.size.width * pct)
+                    }
+                }
+                .frame(height: 4)
+                .opacity(device.batteryPct == nil ? 0.35 : 1)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity, minHeight: DashboardStyle.bluetoothTileHeight, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.7))
+        )
+    }
+}
+
+private struct BluetoothBatteryPill: View {
+    let text: String
+    let percent: Int?
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text(text)
+                .font(DashboardStyle.tinyLabelFont)
+                .foregroundColor(percent == nil ? DashboardStyle.secondaryText : tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .monospacedDigit()
+                .frame(width: DashboardStyle.bluetoothBatteryPillWidth, alignment: .trailing)
+
+            GeometryReader { geo in
+                let pct = CGFloat(max(0, min(percent ?? 0, 100))) / 100
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(DashboardStyle.track)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(tint.opacity(percent == nil ? 0.35 : 0.85))
+                        .frame(width: geo.size.width * pct)
+                }
+            }
+            .frame(width: DashboardStyle.bluetoothBatteryPillWidth, height: 4)
+            .opacity(percent == nil ? 0.35 : 1)
+        }
+    }
+}
+
+private struct BluetoothEmptyRow: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "bluetooth")
+                .font(DashboardStyle.metricIconFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+            Text("暂无可显示的蓝牙设备")
+                .font(DashboardStyle.usageDetailFont)
+                .foregroundColor(DashboardStyle.secondaryText)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 7)
+        .frame(height: DashboardStyle.bluetoothRowHeight)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.7))
+        )
+    }
+}
+
+private struct BluetoothMoreRow: View {
+    let count: Int
+
+    var body: some View {
+        Text("还有 \(count) 台设备")
+            .font(DashboardStyle.usageDetailFont)
+            .foregroundColor(DashboardStyle.secondaryText)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(height: 18)
     }
 }
 

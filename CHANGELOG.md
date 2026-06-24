@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 2.0.63
+
+- Added connected Bluetooth devices to the compact popover and hid paired devices that are not currently connected.
+- Added local Wi-Fi fallback status with CoreWLAN signal quality when the pocket WiFi router is unavailable.
+- Updated the popover preview renderer with pocket WiFi and external Wi-Fi modes.
+
 ## 2.0.62
 
 - Calibrated pocket WiFi monthly usage to 600GB total and 395.65GB used.

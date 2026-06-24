@@ -7,8 +7,9 @@ struct PopoverPreviewRenderer {
     static func main() {
         let output = CommandLine.arguments.dropFirst().first
             ?? "/Users/abo/Desktop/土豆大王/hermes-agent-popover-preview.png"
+        let mode = CommandLine.arguments.dropFirst().dropFirst().first ?? "pocket"
         NSApplication.shared.setActivationPolicy(.accessory)
-        let model = previewModel()
+        let model = previewModel(mode: mode)
         let view = PopoverView(model: model)
             .frame(width: DashboardStyle.popoverWidth, height: DashboardStyle.popoverHeight)
             .environment(\.colorScheme, .light)
@@ -42,7 +43,7 @@ struct PopoverPreviewRenderer {
     }
 
     @MainActor
-    private static func previewModel() -> SystemStatsModel {
+    private static func previewModel(mode: String) -> SystemStatsModel {
         let model = SystemStatsModel()
         model.hermesUsageAvailable = true
         model.hermesTodayTokens = 824_000
@@ -88,27 +89,76 @@ struct PopoverPreviewRenderer {
         model.chargerInputHistory = [18, 38, 52, 74, 96, 112, 108, 116, 110]
         model.chipPowerHistory = [12, 18, 28, 36, 44, 58, 49, 55, 52]
 
-        model.netInBps = 2 * 1024
-        model.netOutBps = 1024
+        model.netInBps = mode == "external-wifi" ? 73 * 1024 : 2 * 1024
+        model.netOutBps = mode == "external-wifi" ? 102 * 1024 : 1024
         model.currentCountry = "美国"
 
-        model.pocketWiFiStatus = PocketWiFiStatus(
-            available: true,
-            networkType: "LTE",
-            carrier: "CMCC",
-            connectStatus: "已联网",
-            signalBars: 5,
-            signalDBm: nil,
-            batteryPct: 100,
-            isCharging: false,
-            connectedDevices: 1,
-            deviceNames: ["Abo MacBook"],
-            ssid: "阿波的随身WIFI",
-            monthlyReceivedBytes: 395_650_000_000,
-            monthlySentBytes: 0,
-            updatedAt: Date(),
-            errorText: ""
-        )
+        if mode == "external-wifi" {
+            model.pocketWiFiStatus = PocketWiFiStatus(
+                available: false,
+                connectStatus: "未连接",
+                errorText: "连接 ZTE 随身 WiFi 后自动刷新",
+                localWiFi: LocalWiFiStatus(
+                    connected: true,
+                    ssid: "Coffee Guest",
+                    interfaceName: "en0",
+                    rssiDBm: -53,
+                    noiseDBm: -92,
+                    transmitRateMbps: 433,
+                    updatedAt: Date()
+                )
+            )
+        } else {
+            model.pocketWiFiStatus = PocketWiFiStatus(
+                available: true,
+                networkType: "LTE",
+                carrier: "CMCC",
+                connectStatus: "已联网",
+                signalBars: 5,
+                signalDBm: nil,
+                batteryPct: 100,
+                isCharging: false,
+                connectedDevices: 1,
+                deviceNames: ["Abo MacBook"],
+                ssid: "阿波的随身WIFI",
+                monthlyReceivedBytes: 395_650_000_000,
+                monthlySentBytes: 0,
+                updatedAt: Date(),
+                errorText: ""
+            )
+        }
+
+        model.bluetoothDevices = [
+            BluetoothDeviceStatus(name: "MX MCHNCL M",
+                                  kind: "Keyboard",
+                                  address: "B0:01:02:03:04:05",
+                                  connected: true,
+                                  batteryPct: 75,
+                                  batterySummary: "75%",
+                                  rssiDBm: nil),
+            BluetoothDeviceStatus(name: "MX Master 4 B",
+                                  kind: "Mouse",
+                                  address: "C0:01:02:03:04:05",
+                                  connected: true,
+                                  batteryPct: 70,
+                                  batterySummary: "70%",
+                                  rssiDBm: nil),
+            BluetoothDeviceStatus(name: "MX Vertical",
+                                  kind: "Mouse",
+                                  address: "D0:01:02:03:04:05",
+                                  connected: true,
+                                  batteryPct: 100,
+                                  batterySummary: "100%",
+                                  rssiDBm: nil),
+            BluetoothDeviceStatus(name: "妙控板",
+                                  kind: "Magic Trackpad",
+                                  address: "E0:01:02:03:04:05",
+                                  connected: true,
+                                  batteryPct: 75,
+                                  batterySummary: "75%",
+                                  rssiDBm: nil)
+        ]
+
         UserDefaults.standard.set("600000000000", forKey: "pocketWiFi.monthlyLimitBytes")
         UserDefaults.standard.set("609474439869", forKey: "pocketWiFi.monthlyRouterBaselineBytes")
         UserDefaults.standard.set("395650000000", forKey: "pocketWiFi.monthlyDisplayBaselineBytes")

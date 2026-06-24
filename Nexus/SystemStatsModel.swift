@@ -7,6 +7,7 @@ import IOKit
 import IOKit.ps
 import SystemConfiguration
 import DiskArbitration
+import CoreWLAN
 
 // MARK: - Types
 
@@ -27,6 +28,87 @@ private struct CodexUsageSnapshot {
     var weeklyUsedPct: Double = 0
     var weeklyResetAt: Date?
     var rateLimitObservedAt: Date?
+}
+
+struct LocalWiFiStatus: Equatable {
+    var connected = false
+    var ssid = ""
+    var interfaceName = ""
+    var rssiDBm: Int?
+    var noiseDBm: Int?
+    var transmitRateMbps: Double?
+    var updatedAt: Date?
+
+    var displayName: String {
+        ssid.isEmpty ? "外部 Wi-Fi" : ssid
+    }
+
+    var signalQualityPercent: Int {
+        guard let rssiDBm else { return 0 }
+        let percent = (Double(rssiDBm) + 90) / 50 * 100
+        return min(100, max(0, Int(percent.rounded())))
+    }
+
+    var signalBars: Int {
+        guard connected else { return 0 }
+        let pct = signalQualityPercent
+        if pct >= 82 { return 5 }
+        if pct >= 64 { return 4 }
+        if pct >= 45 { return 3 }
+        if pct >= 26 { return 2 }
+        return 1
+    }
+
+    var signalText: String {
+        guard connected else { return "--" }
+        if let rssiDBm {
+            return "\(signalQualityPercent)% \(rssiDBm)dBm"
+        }
+        return "--"
+    }
+
+    var linkRateText: String {
+        guard let transmitRateMbps, transmitRateMbps > 0 else { return "--" }
+        if transmitRateMbps >= 100 {
+            return String(format: "%.0fMbps", transmitRateMbps)
+        }
+        return String(format: "%.1fMbps", transmitRateMbps)
+    }
+
+    var qualityText: String {
+        guard connected else { return "未连接" }
+        let pct = signalQualityPercent
+        if pct >= 82 { return "很强" }
+        if pct >= 64 { return "稳定" }
+        if pct >= 45 { return "一般" }
+        return "偏弱"
+    }
+}
+
+struct BluetoothDeviceStatus: Identifiable, Equatable {
+    var id: String { address.isEmpty ? name : address }
+    var name = ""
+    var kind = ""
+    var address = ""
+    var connected = false
+    var batteryPct: Int?
+    var batterySummary = ""
+    var rssiDBm: Int?
+
+    var displayName: String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "蓝牙设备" : trimmed
+    }
+
+    var statusText: String {
+        connected ? "已连接" : "未连接"
+    }
+
+    var batteryText: String {
+        if !batterySummary.isEmpty { return batterySummary }
+        if let batteryPct { return "\(batteryPct)%" }
+        return connected ? "已连接" : "--"
+    }
 }
 
 struct PocketWiFiStatus: Equatable {
@@ -52,6 +134,7 @@ struct PocketWiFiStatus: Equatable {
     var monthlySentBytes: Int64 = 0
     var updatedAt: Date?
     var errorText = ""
+    var localWiFi = LocalWiFiStatus()
 
     var networkLabel: String {
         guard available else { return "未连接" }
@@ -212,6 +295,7 @@ class SystemStatsModel: ObservableObject {
     @Published var currentIP:   String  = "未连接"
     @Published var currentCountry: String = "查询中"
     @Published var pocketWiFiStatus = PocketWiFiStatus()
+    @Published var bluetoothDevices: [BluetoothDeviceStatus] = []
 
     // Disk
     @Published var diskReadKBs: Double  = 0
@@ -314,10 +398,12 @@ class SystemStatsModel: ObservableObject {
     private var hermesUsageTimer: Timer?
     private var codexUsageTimer: Timer?
     private var pocketWiFiTimer: Timer?
+    private var bluetoothTimer: Timer?
     private var fastTickInFlight = false
     private var hermesUsageInFlight = false
     private var codexUsageInFlight = false
     private var pocketWiFiInFlight = false
+    private var bluetoothInFlight = false
     private var codexUsageLastSignature = ""
     private var codexUsageSnapshotCache = CodexUsageSnapshot()
     private var codexUsageReadOffsets: [String: UInt64] = [:]
@@ -329,6 +415,7 @@ class SystemStatsModel: ObservableObject {
     private let lightSampleInterval: TimeInterval = 1.0
     private let mainSampleInterval: TimeInterval = 1.0
     private let diskSampleInterval: TimeInterval = 3.0
+    private let bluetoothSampleInterval: TimeInterval = 30.0
     private let batterySampleEveryTicks = 1
     private static let energyMeterStorageVersion = 2
     private static let energyMeterMaxReasonableWatts = 250.0
@@ -413,6 +500,11 @@ class SystemStatsModel: ObservableObject {
         }
         refreshPocketWiFiStatus()
 
+        bluetoothTimer = Timer.scheduledTimer(withTimeInterval: bluetoothSampleInterval, repeats: true) { [weak self] _ in
+            self?.refreshBluetoothDevices()
+        }
+        refreshBluetoothDevices()
+
         loadEnergyMeterState()
 
         // Static system info (includes one ioreg call for GPU core count).
@@ -427,9 +519,304 @@ class SystemStatsModel: ObservableObject {
         fetchBattery()
     }
 
+    private func refreshBluetoothDevices() {
+        guard !bluetoothInFlight else { return }
+        bluetoothInFlight = true
+
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self = self else { return }
+
+            let profiler = self.shellResult("/usr/sbin/system_profiler", ["SPBluetoothDataType", "-json"])
+            let hid = self.shellResult("/usr/sbin/ioreg", ["-r", "-c", "AppleDeviceManagementHIDEventService", "-a"])
+            let hidBatteries = Self.parseBluetoothHIDBatteries(Data(hid.stdout.utf8))
+            let logiBatteries = self.readLogiOptionsBatteryLevels()
+            let devices = profiler.status == 0
+                ? Self.parseBluetoothProfilerDevices(Data(profiler.stdout.utf8),
+                                                     hidBatteries: hidBatteries,
+                                                     logiBatteries: logiBatteries)
+                : []
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.publishIfChanged(\.bluetoothDevices, devices)
+                self.bluetoothInFlight = false
+            }
+        }
+    }
+
+    private static func parseBluetoothProfilerDevices(_ data: Data,
+                                                      hidBatteries: [String: Int],
+                                                      logiBatteries: [String: Int]) -> [BluetoothDeviceStatus] {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sections = root["SPBluetoothDataType"] as? [[String: Any]] else {
+            return []
+        }
+
+        var devices: [String: BluetoothDeviceStatus] = [:]
+        for section in sections {
+            mergeBluetoothDeviceGroup(section["device_connected"],
+                                      connected: true,
+                                      into: &devices,
+                                      hidBatteries: hidBatteries,
+                                      logiBatteries: logiBatteries)
+        }
+
+        return Array(devices.values)
+            .filter(\.connected)
+            .sorted(by: bluetoothDeviceSort)
+    }
+
+    private static func mergeBluetoothDeviceGroup(_ raw: Any?,
+                                                  connected: Bool,
+                                                  into devices: inout [String: BluetoothDeviceStatus],
+                                                  hidBatteries: [String: Int],
+                                                  logiBatteries: [String: Int]) {
+        guard let group = raw as? [[String: Any]] else { return }
+
+        for item in group {
+            guard let (name, value) = item.first,
+                  let details = value as? [String: Any] else { continue }
+
+            let address = normalizedBluetoothAddress(cleanString(details["device_address"]))
+            let kind = cleanString(details["device_minorType"])
+            let (batteryPctFromProfiler, batterySummaryFromProfiler) = bluetoothBattery(from: details)
+            let hidBattery = address.isEmpty ? nil : hidBatteries[address]
+            let logiBattery = logiBattery(forDeviceName: name, kind: kind, batteries: logiBatteries)
+            let batteryPct = batteryPctFromProfiler ?? hidBattery ?? logiBattery
+            let batterySummary = batterySummaryFromProfiler.isEmpty
+                ? (hidBattery ?? logiBattery).map { "\($0)%" } ?? ""
+                : batterySummaryFromProfiler
+            let key = address.isEmpty ? name : address
+            let next = BluetoothDeviceStatus(
+                name: name,
+                kind: kind,
+                address: address,
+                connected: connected,
+                batteryPct: batteryPct,
+                batterySummary: batterySummary,
+                rssiDBm: number(details["device_rssi"])?.intValue
+            )
+
+            if let current = devices[key] {
+                devices[key] = mergeBluetoothDevice(current, next)
+            } else {
+                devices[key] = next
+            }
+        }
+    }
+
+    private static func mergeBluetoothDevice(_ current: BluetoothDeviceStatus,
+                                             _ next: BluetoothDeviceStatus) -> BluetoothDeviceStatus {
+        BluetoothDeviceStatus(
+            name: next.displayName == "蓝牙设备" ? current.name : next.name,
+            kind: next.kind.isEmpty ? current.kind : next.kind,
+            address: next.address.isEmpty ? current.address : next.address,
+            connected: current.connected || next.connected,
+            batteryPct: next.batteryPct ?? current.batteryPct,
+            batterySummary: next.batterySummary.isEmpty ? current.batterySummary : next.batterySummary,
+            rssiDBm: next.rssiDBm ?? current.rssiDBm
+        )
+    }
+
+    private static func parseBluetoothHIDBatteries(_ data: Data) -> [String: Int] {
+        guard let entries = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [[String: Any]] else {
+            return [:]
+        }
+
+        var batteries: [String: Int] = [:]
+        for entry in entries {
+            guard cleanString(entry["Transport"]).localizedCaseInsensitiveContains("Bluetooth"),
+                  let battery = percentValue(entry["BatteryPercent"]) else { continue }
+            let address = normalizedBluetoothAddress(cleanString(entry["DeviceAddress"]).isEmpty
+                                                     ? cleanString(entry["SerialNumber"])
+                                                     : cleanString(entry["DeviceAddress"]))
+            if !address.isEmpty {
+                batteries[address] = battery
+            }
+        }
+        return batteries
+    }
+
+    private func readLogiOptionsBatteryLevels() -> [String: Int] {
+        let dbPath = "\(NSHomeDirectory())/Library/Application Support/LogiOptionsPlus/settings.db"
+        guard FileManager.default.fileExists(atPath: dbPath) else { return [:] }
+
+        let result = shellResult("/usr/bin/sqlite3", [
+            dbPath,
+            "select file from data order by _id desc limit 1;"
+        ])
+        guard result.status == 0 else { return [:] }
+        return Self.parseLogiOptionsBatteryLevels(Data(result.stdout.utf8))
+    }
+
+    private static func parseLogiOptionsBatteryLevels(_ data: Data) -> [String: Int] {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return [:]
+        }
+
+        var batteries: [String: Int] = [:]
+        for (key, rawValue) in root {
+            guard key.hasPrefix("battery/"),
+                  key.hasSuffix("/warning_notification"),
+                  let details = rawValue as? [String: Any],
+                  let battery = percentValue(details["batteryLevel"]) else { continue }
+
+            let suffixStart = key.index(key.startIndex, offsetBy: "battery/".count)
+            let rawSlug = String(key[suffixStart...]).components(separatedBy: "/").first ?? ""
+            let slug = logiSlug(rawSlug)
+            guard !slug.isEmpty else { continue }
+
+            batteries[slug] = battery
+            if let modelSlug = slug.split(separator: "-").last, modelSlug.count >= 4 {
+                batteries[String(modelSlug)] = battery
+            }
+        }
+        return batteries
+    }
+
+    private static func logiBattery(forDeviceName name: String,
+                                    kind: String,
+                                    batteries: [String: Int]) -> Int? {
+        guard !batteries.isEmpty else { return nil }
+
+        let slug = logiSlug(name)
+        if let exact = batteries[slug] { return exact }
+
+        for (key, value) in batteries where key.contains(slug) || slug.contains(key) {
+            return value
+        }
+
+        if slug.contains("master-4") || slug.contains("master-4-b") {
+            if let value = firstLogiBattery(containing: ["mx", "master", "4"], in: batteries) {
+                return value
+            }
+        }
+
+        let lowerKind = kind.lowercased()
+        if slug.contains("mchncl") || slug.contains("mechanical") || lowerKind.contains("keyboard") {
+            if let value = firstLogiBattery(containing: ["mx", "mechanical"], in: batteries) {
+                return value
+            }
+        }
+
+        if slug.contains("vertical") {
+            if let value = firstLogiBattery(containing: ["mx", "vertical"], in: batteries) {
+                return value
+            }
+        }
+
+        let meaningfulParts = slug
+            .split(separator: "-")
+            .map(String.init)
+            .filter { $0.count >= 3 && $0 != "for" && $0 != "business" }
+        guard !meaningfulParts.isEmpty else { return nil }
+        return firstLogiBattery(containing: meaningfulParts, in: batteries)
+    }
+
+    private static func firstLogiBattery(containing parts: [String],
+                                         in batteries: [String: Int]) -> Int? {
+        batteries
+            .sorted { $0.key < $1.key }
+            .first { entry in parts.allSatisfy { entry.key.contains($0) } }?
+            .value
+    }
+
+    private static func logiSlug(_ text: String) -> String {
+        let lowered = text.lowercased()
+        var result = ""
+        var previousWasDash = false
+
+        for scalar in lowered.unicodeScalars {
+            let value = scalar.value
+            let isAlphanumeric = (48...57).contains(value) || (97...122).contains(value)
+            if isAlphanumeric {
+                result.append(Character(scalar))
+                previousWasDash = false
+            } else if !previousWasDash {
+                result.append("-")
+                previousWasDash = true
+            }
+        }
+
+        return result.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    }
+
+    private static func bluetoothBattery(from details: [String: Any]) -> (Int?, String) {
+        let main = percentValue(details["device_batteryLevelMain"])
+        let left = percentValue(details["device_batteryLevelLeft"])
+        let right = percentValue(details["device_batteryLevelRight"])
+        let casePct = percentValue(details["device_batteryLevelCase"])
+
+        if let left, let right {
+            let ear = Int((Double(left + right) / 2.0).rounded())
+            let summary = casePct.map { "耳\(ear)% 盒\($0)%" } ?? "耳\(ear)%"
+            return (ear, summary)
+        }
+        if let ear = left ?? right {
+            let summary = casePct.map { "耳\(ear)% 盒\($0)%" } ?? "耳\(ear)%"
+            return (ear, summary)
+        }
+        if let main {
+            return (main, "\(main)%")
+        }
+        if let casePct {
+            return (casePct, "盒\(casePct)%")
+        }
+        return (nil, "")
+    }
+
+    private static func percentValue(_ value: Any?) -> Int? {
+        if let number = value as? NSNumber {
+            return min(100, max(0, number.intValue))
+        }
+        let text = cleanString(value)
+        guard !text.isEmpty else { return nil }
+        let digits = text.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+        guard let pct = Int(digits) else { return nil }
+        return min(100, max(0, pct))
+    }
+
+    private static func normalizedBluetoothAddress(_ raw: String) -> String {
+        let hex = raw
+            .uppercased()
+            .filter { character in
+                guard let scalar = character.unicodeScalars.first else { return false }
+                let value = scalar.value
+                return (48...57).contains(value) || (65...70).contains(value)
+            }
+        guard hex.count == 12 else { return raw.uppercased().replacingOccurrences(of: "-", with: ":") }
+        var parts: [String] = []
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let next = hex.index(index, offsetBy: 2)
+            parts.append(String(hex[index..<next]))
+            index = next
+        }
+        return parts.joined(separator: ":")
+    }
+
+    private static func bluetoothDeviceSort(_ lhs: BluetoothDeviceStatus,
+                                            _ rhs: BluetoothDeviceStatus) -> Bool {
+        if lhs.connected != rhs.connected { return lhs.connected && !rhs.connected }
+        let leftPriority = bluetoothDevicePriority(lhs)
+        let rightPriority = bluetoothDevicePriority(rhs)
+        if leftPriority != rightPriority { return leftPriority < rightPriority }
+        return lhs.displayName.localizedStandardCompare(rhs.displayName) == .orderedAscending
+    }
+
+    private static func bluetoothDevicePriority(_ device: BluetoothDeviceStatus) -> Int {
+        let text = "\(device.kind) \(device.displayName)".lowercased()
+        if text.contains("airpods") || text.contains("headphone") { return 0 }
+        if text.contains("keyboard") { return 1 }
+        if text.contains("mouse") { return 2 }
+        if text.contains("trackpad") || text.contains("触控") || text.contains("妙控板") { return 3 }
+        return 4
+    }
+
     private func refreshPocketWiFiStatus() {
         guard !pocketWiFiInFlight else { return }
         pocketWiFiInFlight = true
+        let localWiFi = Self.sampleLocalWiFiStatus()
 
         let commands = [
             "mc_modem_main_state",
@@ -464,7 +851,7 @@ class SystemStatsModel: ObservableObject {
         ]
 
         guard let url = components?.url else {
-            updatePocketWiFiUnavailable("状态接口不可用")
+            updatePocketWiFiUnavailable("状态接口不可用", localWiFi: localWiFi)
             return
         }
 
@@ -483,26 +870,26 @@ class SystemStatsModel: ObservableObject {
             guard error == nil,
                   let data,
                   let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                self.updatePocketWiFiUnavailable("连接 ZTE 随身 WiFi 后自动刷新")
+                self.updatePocketWiFiUnavailable("连接 ZTE 随身 WiFi 后自动刷新", localWiFi: localWiFi)
                 return
             }
 
-            let status = Self.parsePocketWiFiStatus(object)
+            let status = Self.parsePocketWiFiStatus(object, localWiFi: localWiFi)
             DispatchQueue.main.async { [weak self] in
                 self?.publishIfChanged(\.pocketWiFiStatus, status)
             }
         }.resume()
     }
 
-    private func updatePocketWiFiUnavailable(_ message: String) {
+    private func updatePocketWiFiUnavailable(_ message: String, localWiFi: LocalWiFiStatus) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.publishIfChanged(\.pocketWiFiStatus, PocketWiFiStatus(errorText: message))
+            self.publishIfChanged(\.pocketWiFiStatus, PocketWiFiStatus(errorText: message, localWiFi: localWiFi))
             self.pocketWiFiInFlight = false
         }
     }
 
-    private static func parsePocketWiFiStatus(_ object: [String: Any]) -> PocketWiFiStatus {
+    private static func parsePocketWiFiStatus(_ object: [String: Any], localWiFi: LocalWiFiStatus) -> PocketWiFiStatus {
         let modemState = cleanString(object["mc_modem_main_state"])
         let networkType = cleanString(object["network_type"])
         let carrier = cleanString(object["network_provider_fullname"]).isEmpty
@@ -552,7 +939,33 @@ class SystemStatsModel: ObservableObject {
             monthlyReceivedBytes: monthlyReceivedBytes,
             monthlySentBytes: monthlySentBytes,
             updatedAt: Date(),
-            errorText: hasRouterPayload ? "" : "连接 ZTE 随身 WiFi 后自动刷新"
+            errorText: hasRouterPayload ? "" : "连接 ZTE 随身 WiFi 后自动刷新",
+            localWiFi: localWiFi
+        )
+    }
+
+    private static func sampleLocalWiFiStatus() -> LocalWiFiStatus {
+        guard let interface = CWWiFiClient.shared().interface() else {
+            return LocalWiFiStatus()
+        }
+
+        let ssid = (interface.ssid() ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let bssid = (interface.bssid() ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let rssi = interface.rssiValue()
+        let noise = interface.noiseMeasurement()
+        let transmitRate = interface.transmitRate()
+        let hasSignal = rssi < 0 && rssi > -100
+        let hasRate = transmitRate > 0
+        let connected = interface.powerOn() && (!ssid.isEmpty || !bssid.isEmpty || (hasSignal && hasRate))
+
+        return LocalWiFiStatus(
+            connected: connected,
+            ssid: ssid,
+            interfaceName: interface.interfaceName ?? "",
+            rssiDBm: hasSignal ? rssi : nil,
+            noiseDBm: noise < 0 && noise > -120 ? noise : nil,
+            transmitRateMbps: hasRate ? transmitRate : nil,
+            updatedAt: Date()
         )
     }
 

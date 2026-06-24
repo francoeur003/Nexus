@@ -36,7 +36,7 @@ swiftc -swift-version 5 -target arm64-apple-macosx13.0 -O -default-isolation Mai
   "$ROOT/Nexus/UpdateChecker.swift" \
   "$ROOT/Nexus/WelcomeView.swift" \
   "$OBJ_DIR/IOReportWrapper.o" "$OBJ_DIR/SMC.o" \
-  -framework AppKit -framework SwiftUI -framework Combine -framework IOKit -framework DiskArbitration \
+  -framework AppKit -framework SwiftUI -framework Combine -framework IOKit -framework DiskArbitration -framework CoreWLAN \
   -framework ScreenCaptureKit -framework AVFoundation -lIOReport \
   -o "$PRODUCT"
 
@@ -68,8 +68,8 @@ install -m 755 "$HELPER_PRODUCT" "$APP/Contents/MacOS/nexus-helper"
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable Nexus" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.abo.Nexus" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName Nexus" "$APP/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 2.0.62" "$APP/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion 2062" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 2.0.63" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion 2063" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription Nexus 需要麦克风权限，用于录制你的声音和通话声音。" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :NSScreenCaptureUsageDescription Nexus 需要录屏与系统录音权限，用于记录会议和电脑声音。" "$APP/Contents/Info.plist"
 ICONSET="$ROOT/build/nexus-icon.iconset"

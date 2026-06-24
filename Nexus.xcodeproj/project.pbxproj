@@ -10,6 +10,7 @@
 		71A100012F78000100F11BF3 /* NexusWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71A100022F78000100F11BF3 /* NexusWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8D9A10012F79000100F11BF3 /* ScreenCaptureKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D9A10022F79000100F11BF3 /* ScreenCaptureKit.framework */; };
 		8D9A10032F79000100F11BF3 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D9A10042F79000100F11BF3 /* AVFoundation.framework */; };
+		8D9A10052F79000100F11BF3 /* CoreWLAN.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D9A10062F79000100F11BF3 /* CoreWLAN.framework */; };
 		606C7E022F77A8C500F11BF3 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 606C7E032F77A8C500F11BF3 /* IOKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +43,7 @@
 		606C7E032F77A8C500F11BF3 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		8D9A10022F79000100F11BF3 /* ScreenCaptureKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScreenCaptureKit.framework; path = System/Library/Frameworks/ScreenCaptureKit.framework; sourceTree = SDKROOT; };
 		8D9A10042F79000100F11BF3 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		8D9A10062F79000100F11BF3 /* CoreWLAN.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreWLAN.framework; path = System/Library/Frameworks/CoreWLAN.framework; sourceTree = SDKROOT; };
 		71A100022F78000100F11BF3 /* NexusWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NexusWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -65,6 +67,7 @@
 			files = (
 				8D9A10012F79000100F11BF3 /* ScreenCaptureKit.framework in Frameworks */,
 				8D9A10032F79000100F11BF3 /* AVFoundation.framework in Frameworks */,
+				8D9A10052F79000100F11BF3 /* CoreWLAN.framework in Frameworks */,
 				606C7E022F77A8C500F11BF3 /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -103,6 +106,7 @@
 			children = (
 				8D9A10022F79000100F11BF3 /* ScreenCaptureKit.framework */,
 				8D9A10042F79000100F11BF3 /* AVFoundation.framework */,
+				8D9A10062F79000100F11BF3 /* CoreWLAN.framework */,
 				606C7E032F77A8C500F11BF3 /* IOKit.framework */,
 			);
 			name = Frameworks;
@@ -365,7 +369,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2062;
+				CURRENT_PROJECT_VERSION = 2063;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -379,7 +383,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.62;
+				MARKETING_VERSION = 2.0.63;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lIOReport",
@@ -404,7 +408,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2062;
+				CURRENT_PROJECT_VERSION = 2063;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -418,7 +422,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.62;
+				MARKETING_VERSION = 2.0.63;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lIOReport",
@@ -442,7 +446,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = NexusWidget/NexusWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2062;
+				CURRENT_PROJECT_VERSION = 2063;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NexusWidget/Info.plist;
@@ -452,7 +456,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.62;
+				MARKETING_VERSION = 2.0.63;
 				PRODUCT_BUNDLE_IDENTIFIER = com.abo.Nexus.NexusWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -467,7 +471,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = NexusWidget/NexusWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2062;
+				CURRENT_PROJECT_VERSION = 2063;
 				DEVELOPMENT_TEAM = C287WU2H3P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NexusWidget/Info.plist;
@@ -477,7 +481,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.62;
+				MARKETING_VERSION = 2.0.63;
 				PRODUCT_BUNDLE_IDENTIFIER = com.abo.Nexus.NexusWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

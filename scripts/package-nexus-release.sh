@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${NEXUS_VERSION:-2.0.62}"
-BUILD="${NEXUS_BUILD:-2062}"
+VERSION="${NEXUS_VERSION:-2.0.63}"
+BUILD="${NEXUS_BUILD:-2063}"
 APP_SOURCE="${APP_SOURCE:-/Applications/Nexus.app}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Nexus Local Code Signing}"
 DIST="$ROOT/dist/nexus-release-$VERSION"

@@ -30,6 +30,22 @@ private struct CodexUsageSnapshot {
     var rateLimitObservedAt: Date?
 }
 
+private struct SeedanceUsageSnapshot {
+    var available = false
+    var balanceCents: Int64 = 0
+    var todayCostCents: Int64 = 0
+    var periodCostCents: Int64 = 0
+    var dailyCostCents: [Int64] = Array(repeating: 0, count: 7)
+    var billingRows = 0
+    var clientName = ""
+}
+
+private struct SeedanceCredentials {
+    var username: String
+    var password: String
+    var baseURL: String
+}
+
 struct LocalWiFiStatus: Equatable {
     var connected = false
     var ssid = ""
@@ -367,6 +383,15 @@ class SystemStatsModel: ObservableObject {
     @Published var codexWeeklyRemainingPct = 0
     @Published var codexWeeklyResetText = "--"
 
+    // Seedance 2.0 API usage
+    @Published var seedanceAPIUsageAvailable = false
+    @Published var seedanceAPIClientName = "Seedance"
+    @Published var seedanceAPIBalanceText = "余 --"
+    @Published var seedanceAPITodayCostText = "今日 --"
+    @Published var seedanceAPIPeriodCostText = "7日 --"
+    @Published var seedanceAPIDailyCosts: [Double] = Array(repeating: 0, count: 7)
+    @Published var seedanceAPIBillingRows = 0
+
     // Private
     private var smcConn: io_connect_t     = 0
     private var nativeMetricsInFlight     = false
@@ -397,11 +422,13 @@ class SystemStatsModel: ObservableObject {
     private var diskTimer: Timer?          // independent timer — keeps ioreg off samplerQueue
     private var hermesUsageTimer: Timer?
     private var codexUsageTimer: Timer?
+    private var seedanceUsageTimer: Timer?
     private var pocketWiFiTimer: Timer?
     private var bluetoothTimer: Timer?
     private var fastTickInFlight = false
     private var hermesUsageInFlight = false
     private var codexUsageInFlight = false
+    private var seedanceUsageInFlight = false
     private var pocketWiFiInFlight = false
     private var bluetoothInFlight = false
     private var codexUsageLastSignature = ""
@@ -421,6 +448,9 @@ class SystemStatsModel: ObservableObject {
     private static let energyMeterMaxReasonableWatts = 250.0
     private static let codexUsageRecentDays = 7
     private static let codexUsageFileLimit = 80
+    private static let seedanceCredentialService = "com.abo.Nexus.seedance"
+    private static let seedanceCredentialAccount = "seedance-api"
+    private static let seedanceDefaultAPIBaseURL = "https://aiopenapi.kuaizi.cn/ai-open-platform-api/v1"
     private let debugMetricsLogging = false
     private let helperPath = "/Users/Shared/Nexus/nexus-helper"
     private let helperSudoersPath = "/etc/sudoers.d/nexus-helper"
@@ -494,6 +524,11 @@ class SystemStatsModel: ObservableObject {
             self?.refreshCodexUsage()
         }
         refreshCodexUsage(force: true)
+
+        seedanceUsageTimer = Timer.scheduledTimer(withTimeInterval: 300.0, repeats: true) { [weak self] _ in
+            self?.refreshSeedanceAPIUsage()
+        }
+        refreshSeedanceAPIUsage()
 
         pocketWiFiTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.refreshPocketWiFiStatus()
@@ -2526,6 +2561,259 @@ class SystemStatsModel: ObservableObject {
         let data = handle.readDataToEndOfFile()
         try? handle.close()
         return String(data: data, encoding: .utf8)
+    }
+
+    // MARK: - Seedance API usage
+
+    private func refreshSeedanceAPIUsage() {
+        guard !seedanceUsageInFlight else { return }
+        seedanceUsageInFlight = true
+
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self = self else { return }
+            let snapshot = self.readSeedanceUsageSnapshot()
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.publishIfChanged(\.seedanceAPIUsageAvailable, snapshot.available)
+                self.publishIfChanged(\.seedanceAPIBillingRows, snapshot.billingRows)
+                if snapshot.available {
+                    self.publishIfChanged(\.seedanceAPIClientName, snapshot.clientName.isEmpty ? "Seedance" : snapshot.clientName)
+                    self.publishIfChanged(\.seedanceAPIBalanceText, "余 \(Self.seedanceMoneyText(snapshot.balanceCents))")
+                    self.publishIfChanged(\.seedanceAPITodayCostText, "今日 \(Self.seedanceMoneyText(snapshot.todayCostCents))")
+                    self.publishIfChanged(\.seedanceAPIPeriodCostText, "7日 \(Self.seedanceMoneyText(snapshot.periodCostCents))")
+                    self.publishIfChanged(\.seedanceAPIDailyCosts, snapshot.dailyCostCents.map { Double($0) / 100.0 })
+                } else {
+                    self.publishIfChanged(\.seedanceAPIClientName, "Seedance")
+                    self.publishIfChanged(\.seedanceAPIBalanceText, "余 --")
+                    self.publishIfChanged(\.seedanceAPITodayCostText, "今日 --")
+                    self.publishIfChanged(\.seedanceAPIPeriodCostText, "7日 --")
+                    self.publishIfChanged(\.seedanceAPIDailyCosts, Array(repeating: 0, count: 7))
+                }
+                self.seedanceUsageInFlight = false
+            }
+        }
+    }
+
+    private func readSeedanceUsageSnapshot() -> SeedanceUsageSnapshot {
+        guard let credentials = readSeedanceCredentials() else { return SeedanceUsageSnapshot() }
+        let login = Self.seedancePost("/login",
+                                      baseURL: credentials.baseURL,
+                                      body: ["username": credentials.username,
+                                             "password": credentials.password])
+        guard let token = Self.seedanceToken(from: login), !token.isEmpty else {
+            return SeedanceUsageSnapshot()
+        }
+
+        guard let profile = Self.seedancePost("/user/profile",
+                                              baseURL: credentials.baseURL,
+                                              body: [:],
+                                              token: token) else {
+            return SeedanceUsageSnapshot()
+        }
+
+        let periodDates = Self.seedancePeriodDateStrings(days: 7)
+        guard let firstDate = periodDates.first,
+              let today = periodDates.last else {
+            return SeedanceUsageSnapshot()
+        }
+        var page = 1
+        let pageSize = 200
+        var totalRows: Int?
+        var fetchedRows = 0
+        var costsByDate = Dictionary(uniqueKeysWithValues: periodDates.map { ($0, Int64(0)) })
+
+        while page <= 20 {
+            guard let billing = Self.seedancePost("/console/billing/list",
+                                                  baseURL: credentials.baseURL,
+                                                  body: [
+                                                      "start_time": firstDate,
+                                                      "end_time": "\(today) 23:59:59",
+                                                      "page": page,
+                                                      "page_size": pageSize
+                                                  ],
+                                                  token: token) else {
+                break
+            }
+            if totalRows == nil {
+                totalRows = Self.seedanceInt(billing["total"])
+            }
+            let items = billing["items"] as? [[String: Any]] ?? []
+            fetchedRows += items.count
+            for item in items {
+                guard let dateKey = Self.seedanceBillingDateKey(item),
+                      costsByDate.keys.contains(dateKey) else { continue }
+                costsByDate[dateKey, default: 0] += Self.seedanceAmountCents(item["amount"])
+            }
+            guard !items.isEmpty else { break }
+            if let totalRows, fetchedRows >= totalRows { break }
+            page += 1
+        }
+        let dailyCosts = periodDates.map { costsByDate[$0] ?? 0 }
+        let todayCost = dailyCosts.last ?? 0
+        let periodCost = dailyCosts.reduce(0, +)
+
+        return SeedanceUsageSnapshot(available: true,
+                                     balanceCents: Self.seedanceAmountCents(profile["wallet_balance"]),
+                                     todayCostCents: todayCost,
+                                     periodCostCents: periodCost,
+                                     dailyCostCents: dailyCosts,
+                                     billingRows: totalRows ?? fetchedRows,
+                                     clientName: profile["client_name"] as? String ?? "")
+    }
+
+    private func readSeedanceCredentials() -> SeedanceCredentials? {
+        if let credentials = readSeedanceCredentialsFromKeychain() {
+            return credentials
+        }
+        return Self.readSeedanceCredentialsFromFile()
+    }
+
+    private func readSeedanceCredentialsFromKeychain() -> SeedanceCredentials? {
+        let result = shellResult("/usr/bin/security", [
+            "find-generic-password",
+            "-s", Self.seedanceCredentialService,
+            "-a", Self.seedanceCredentialAccount,
+            "-w"
+        ])
+        guard result.status == 0 else { return nil }
+        return Self.parseSeedanceCredentials(result.stdout)
+    }
+
+    private static func readSeedanceCredentialsFromFile() -> SeedanceCredentials? {
+        let url = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent(".nexus")
+            .appendingPathComponent("seedance_api.json")
+        guard let data = try? Data(contentsOf: url),
+              let text = String(data: data, encoding: .utf8) else { return nil }
+        return parseSeedanceCredentials(text)
+    }
+
+    private static func parseSeedanceCredentials(_ text: String) -> SeedanceCredentials? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = trimmed.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        let username = (obj["username"] as? String ?? obj["account"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let password = (obj["password"] as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseURL = (obj["baseURL"] as? String ?? obj["base_url"] as? String ?? seedanceDefaultAPIBaseURL)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/").union(.whitespacesAndNewlines))
+        guard !username.isEmpty, !password.isEmpty else { return nil }
+        return SeedanceCredentials(username: username,
+                                   password: password,
+                                   baseURL: baseURL.isEmpty ? seedanceDefaultAPIBaseURL : baseURL)
+    }
+
+    private static func seedancePost(_ path: String,
+                                     baseURL: String,
+                                     body: [String: Any],
+                                     token: String? = nil) -> [String: Any]? {
+        guard let url = URL(string: "\(baseURL)\(path)") else { return nil }
+        var request = URLRequest(url: url, timeoutInterval: 12)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token, !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        guard JSONSerialization.isValidJSONObject(body),
+              let bodyData = try? JSONSerialization.data(withJSONObject: body) else { return nil }
+        request.httpBody = bodyData
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var responseData: Data?
+        var responseStatus = 0
+        let task = URLSession.shared.dataTask(with: request) { data, response, _ in
+            responseData = data
+            responseStatus = (response as? HTTPURLResponse)?.statusCode ?? 0
+            semaphore.signal()
+        }
+        task.resume()
+        guard semaphore.wait(timeout: .now() + 14) == .success,
+              responseStatus >= 200, responseStatus < 300,
+              let data = responseData,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            task.cancel()
+            return nil
+        }
+        if let code = number(obj["code"])?.intValue, code != 0, code != 200 {
+            return nil
+        }
+        if let dataObj = obj["data"] as? [String: Any] {
+            return dataObj
+        }
+        return obj
+    }
+
+    private static func seedanceToken(from obj: [String: Any]?) -> String? {
+        guard let obj else { return nil }
+        return (obj["token"] as? String ?? obj["access_token"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func seedanceAmountCents(_ value: Any?) -> Int64 {
+        if let number = number(value) {
+            let rawValue = number.doubleValue
+            if rawValue.isFinite, rawValue.rounded() != rawValue {
+                return Int64((rawValue * 100).rounded())
+            }
+            return number.int64Value
+        }
+        if let text = value as? String {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.contains(".") {
+                return Int64(((Double(trimmed) ?? 0) * 100).rounded())
+            }
+            return Int64(trimmed) ?? 0
+        }
+        return 0
+    }
+
+    private static func seedanceInt(_ value: Any?) -> Int? {
+        if let number = number(value) { return number.intValue }
+        if let text = value as? String { return Int(text) }
+        return nil
+    }
+
+    private static func seedancePeriodDateStrings(days: Int) -> [String] {
+        guard days > 0 else { return [] }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .current
+        let today = calendar.startOfDay(for: Date())
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return (0..<days).reversed().compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            return formatter.string(from: date)
+        }
+    }
+
+    private static func seedanceBillingDateKey(_ item: [String: Any]) -> String? {
+        for key in ["created_at", "createdAt", "create_time", "createTime", "updated_at"] {
+            guard let text = item[key] as? String else { continue }
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.count >= 10 {
+                return String(trimmed.prefix(10))
+            }
+        }
+        return nil
+    }
+
+    private static func seedanceMoneyText(_ cents: Int64) -> String {
+        let sign = cents < 0 ? "-" : ""
+        let value = abs(cents)
+        let yuan = Double(value) / 100
+        if yuan >= 1_000_000 {
+            return "\(sign)¥\(String(format: "%.1fM", yuan / 1_000_000))"
+        }
+        if yuan >= 10_000 {
+            return "\(sign)¥\(String(format: "%.1fK", yuan / 1_000))"
+        }
+        if value % 100 == 0 {
+            return "\(sign)¥\(value / 100)"
+        }
+        return "\(sign)¥\(value / 100).\(String(format: "%02lld", value % 100))"
     }
 
     private static func compactTokenText(_ tokens: Int64) -> String {

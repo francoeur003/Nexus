@@ -59,6 +59,13 @@ struct PopoverPreviewRenderer {
         model.codexFiveHourResetText = "3 小时后"
         model.codexWeeklyRemainingPct = 74
         model.codexWeeklyResetText = "6 天后"
+        model.seedanceAPIUsageAvailable = true
+        model.seedanceAPIClientName = "Seedance API"
+        model.seedanceAPIBalanceText = "余 ¥1,256.38"
+        model.seedanceAPITodayCostText = "今日 ¥50.23"
+        model.seedanceAPIPeriodCostText = "7日 ¥812.40"
+        model.seedanceAPIDailyCosts = [12.8, 0, 84.5, 126.3, 402.1, 136.4, 50.23]
+        model.seedanceAPIBillingRows = 373
 
         model.cpuUsage = 56
         model.gpuUsage = 82

@@ -18,7 +18,7 @@ struct PopoverView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DashboardStyle.outerSpacing) {
-                Header(snapshot: snapshot)
+                CompactHeader(snapshot: snapshot)
                 if snapshot.helperMissing {
                     HelperMissingBanner()
                 }
@@ -141,6 +141,8 @@ enum DashboardStyle {
     static let fanReasonPercentWidth: CGFloat = 26
     static let bluetoothRowHeight: CGFloat = 28
     static let bluetoothTileHeight: CGFloat = 42
+    static let bluetoothCompactTileHeight: CGFloat = 30
+    static let bluetoothMicroTileHeight: CGFloat = 27
     static let bluetoothGridSpacing: CGFloat = 4
     static let bluetoothBatteryPillWidth: CGFloat = 58
 
@@ -202,7 +204,9 @@ enum DashboardStyle {
     static let topCardCaptionFont = Font.system(size: 8, weight: .semibold)
     static let quotaRingFont = Font.system(size: 8.5, weight: .heavy, design: .rounded)
     static let badgeFont = Font.system(size: 7.5, weight: .bold)
+    static let apiUsageFont = Font.system(size: 8.3, weight: .heavy, design: .rounded)
     static let tinyLabelFont = Font.system(size: 7.5, weight: .bold)
+    static let bluetoothMicroLabelFont = Font.system(size: 6.6, weight: .bold)
     static let smallLabelFont = Font.system(size: 8.5, weight: .bold)
     static let smallValueFont = Font.system(size: 9.2, weight: .heavy, design: .rounded)
     static let mediumValueFont = Font.system(size: 11, weight: .heavy, design: .rounded)
@@ -249,6 +253,88 @@ private struct HelperMissingBanner: View {
 }
 
 // MARK: - Header
+
+private struct CompactHeader: View {
+    let snapshot: PopoverSnapshot
+    @ObservedObject private var recorder = RecordingController.shared
+
+    private var statusColor: Color {
+        snapshot.hermesUsageAvailable ? DashboardStyle.accentGreen : DashboardStyle.accentYellow
+    }
+
+    private var audioTitle: String {
+        if recorder.isPreparing { return "准备" }
+        return recorder.isCallRecording ? "停止" : "监听"
+    }
+
+    private var audioIcon: String {
+        recorder.isCallRecording ? "stop.fill" : "mic.fill"
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            ZStack {
+                Circle().fill(DashboardStyle.brandGradient)
+                Image(systemName: "sparkle")
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Nexus")
+                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 7, height: 7)
+                    Text("今日")
+                        .font(DashboardStyle.headerMetaFont)
+                        .foregroundColor(DashboardStyle.secondaryText)
+                    Text(snapshot.hermesTodayTokensText.replacingOccurrences(of: "今日 ", with: ""))
+                        .font(DashboardStyle.headerMetaMonoFont)
+                        .foregroundColor(statusColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text("·")
+                        .font(DashboardStyle.headerMetaFont)
+                        .foregroundColor(DashboardStyle.mutedText)
+                    Text(snapshot.hermesTodayDurationText)
+                        .font(DashboardStyle.headerMetaMonoFont)
+                        .foregroundColor(DashboardStyle.secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 2)
+
+            HeaderCountryChip(country: snapshot.compact.currentCountry)
+            HeaderActionButton(title: audioTitle,
+                               systemImage: audioIcon,
+                               tint: recorder.isCallRecording ? DashboardStyle.accentRed : DashboardStyle.accentGreen,
+                               isDisabled: recorder.isPreparing) {
+                recorder.toggleCallRecording()
+            }
+            .help("录制系统声音和麦克风，并打开 Hermes 会议翻译板")
+            HeaderActionButton(title: "录屏",
+                               systemImage: "record.circle",
+                               tint: DashboardStyle.accentBlue,
+                               isDisabled: false) {
+                recorder.openScreenRecorderPicker()
+            }
+            .help("打开区域录屏选择器")
+        }
+        .padding(.horizontal, 2)
+        .padding(.top, 1)
+        .padding(.bottom, 5)
+    }
+}
 
 private struct Header: View {
     let snapshot: PopoverSnapshot
@@ -434,6 +520,13 @@ private struct CompactStatusSnapshot: Equatable {
     let codexFiveHourResetText: String
     let codexWeeklyRemainingPct: Int
     let codexWeeklyResetText: String
+    let seedanceAPIUsageAvailable: Bool
+    let seedanceAPIClientName: String
+    let seedanceAPIBalanceText: String
+    let seedanceAPITodayCostText: String
+    let seedanceAPIPeriodCostText: String
+    let seedanceAPIDailyCosts: [Double]
+    let seedanceAPIBillingRows: Int
     let hermesUsageAvailable: Bool
     let hermesTodayTokens: Int64
     let hermesTodaySeconds: Double
@@ -480,6 +573,13 @@ private struct CompactStatusSnapshot: Equatable {
         codexFiveHourResetText = model.codexFiveHourResetText
         codexWeeklyRemainingPct = model.codexWeeklyRemainingPct
         codexWeeklyResetText = model.codexWeeklyResetText
+        seedanceAPIUsageAvailable = model.seedanceAPIUsageAvailable
+        seedanceAPIClientName = model.seedanceAPIClientName
+        seedanceAPIBalanceText = model.seedanceAPIBalanceText
+        seedanceAPITodayCostText = model.seedanceAPITodayCostText
+        seedanceAPIPeriodCostText = model.seedanceAPIPeriodCostText
+        seedanceAPIDailyCosts = model.seedanceAPIDailyCosts
+        seedanceAPIBillingRows = model.seedanceAPIBillingRows
         hermesUsageAvailable = model.hermesUsageAvailable
         hermesTodayTokens = model.hermesTodayTokens
         hermesTodaySeconds = model.hermesTodaySeconds
@@ -610,9 +710,11 @@ private struct CompactStatusSection: View, Equatable {
         VStack(alignment: .leading, spacing: DashboardStyle.sectionSpacing) {
             TopMetricCards(snapshot: snapshot)
 
-            BluetoothDevicesCard(devices: snapshot.bluetoothDevices)
+            SeedanceAPIUsageBarCard(snapshot: snapshot)
 
             SystemResourceCard(snapshot: snapshot)
+
+            BluetoothDevicesCard(devices: snapshot.bluetoothDevices)
 
             if snapshot.fanRPM > 0 {
                 FanReasonPanel(reasons: snapshot.fanReasons, stopAdvice: snapshot.fanStopAdvice)
@@ -1024,11 +1126,8 @@ private struct BluetoothDevicesCard: View {
         Array(connectedDevices.prefix(4))
     }
 
-    private var gridColumns: [GridItem] {
-        [
-            GridItem(.flexible(), spacing: DashboardStyle.bluetoothGridSpacing),
-            GridItem(.flexible(), spacing: DashboardStyle.bluetoothGridSpacing)
-        ]
+    private var visibleDeviceIDs: [String] {
+        visibleDevices.map(\.id)
     }
 
     private var connectedCount: Int {
@@ -1049,17 +1148,14 @@ private struct BluetoothDevicesCard: View {
 
             if connectedDevices.isEmpty {
                 BluetoothEmptyRow()
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
             } else {
                 VStack(spacing: DashboardStyle.bluetoothGridSpacing) {
-                    LazyVGrid(columns: gridColumns,
-                              alignment: .leading,
-                              spacing: DashboardStyle.bluetoothGridSpacing) {
-                        ForEach(visibleDevices) { device in
-                            BluetoothDeviceTile(device: device)
-                        }
-                    }
+                    BluetoothDeviceGroup(devices: visibleDevices)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     if connectedDevices.count > visibleDevices.count {
                         BluetoothMoreRow(count: connectedDevices.count - visibleDevices.count)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }
@@ -1067,11 +1163,64 @@ private struct BluetoothDevicesCard: View {
         .padding(.horizontal, DashboardStyle.panelPaddingX)
         .padding(.vertical, DashboardStyle.densePanelPaddingY)
         .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+        .animation(.spring(response: 0.28, dampingFraction: 0.86), value: visibleDeviceIDs)
+        .animation(.spring(response: 0.28, dampingFraction: 0.86), value: connectedCount)
+    }
+}
+
+private enum BluetoothDeviceDensity {
+    case compact
+    case micro
+}
+
+private struct BluetoothDeviceGroup: View {
+    let devices: [BluetoothDeviceStatus]
+
+    private var density: BluetoothDeviceDensity {
+        devices.count >= 4 ? .micro : .compact
+    }
+
+    private var indexedDevices: [(offset: Int, element: BluetoothDeviceStatus)] {
+        Array(devices.enumerated())
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(indexedDevices, id: \.element.id) { item in
+                if item.offset > 0 {
+                    Rectangle()
+                        .fill(DashboardStyle.tileStroke.opacity(0.9))
+                        .frame(width: 1)
+                        .padding(.vertical, 2)
+                        .transition(.opacity)
+                }
+
+                BluetoothDeviceTile(device: item.element, density: density)
+                    .frame(maxWidth: .infinity)
+                    .transition(.asymmetric(
+                        insertion: .opacity
+                            .combined(with: .scale(scale: 0.92, anchor: .center))
+                            .combined(with: .move(edge: .trailing)),
+                        removal: .opacity
+                            .combined(with: .scale(scale: 0.88, anchor: .center))
+                            .combined(with: .move(edge: .leading))
+                    ))
+            }
+        }
+        .padding(.horizontal, density == .micro ? 4 : 5)
+        .padding(.vertical, density == .micro ? 4 : 5)
+        .background(
+            RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                .fill(DashboardStyle.tileFill)
+                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.7))
+        )
     }
 }
 
 private struct BluetoothDeviceTile: View {
     let device: BluetoothDeviceStatus
+    var density: BluetoothDeviceDensity?
 
     private var tint: Color {
         guard let pct = device.batteryPct else {
@@ -1106,41 +1255,91 @@ private struct BluetoothDeviceTile: View {
         return device.statusText
     }
 
+    private var isEmbedded: Bool {
+        density != nil
+    }
+
+    private var isMicro: Bool {
+        density == .micro
+    }
+
+    private var labelFont: Font {
+        isMicro ? DashboardStyle.bluetoothMicroLabelFont : DashboardStyle.tinyLabelFont
+    }
+
+    private var iconSize: CGFloat {
+        if isMicro { return 12 }
+        return isEmbedded ? 14 : 18
+    }
+
+    private var iconCornerRadius: CGFloat {
+        isEmbedded ? 4 : 5
+    }
+
+    private var horizontalPadding: CGFloat {
+        if isMicro { return 2 }
+        return isEmbedded ? 3 : 6
+    }
+
+    private var verticalPadding: CGFloat {
+        if isMicro { return 0 }
+        return isEmbedded ? 1 : 5
+    }
+
+    private var minHeight: CGFloat {
+        if isMicro { return DashboardStyle.bluetoothMicroTileHeight }
+        return isEmbedded ? DashboardStyle.bluetoothCompactTileHeight : DashboardStyle.bluetoothTileHeight
+    }
+
+    private var rowSpacing: CGFloat {
+        if isMicro { return 2 }
+        return isEmbedded ? 3 : 4
+    }
+
+    private var inlineSpacing: CGFloat {
+        if isMicro { return 3 }
+        return isEmbedded ? 4 : 5
+    }
+
+    private var barHeight: CGFloat {
+        isMicro ? 3.5 : 4
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: rowSpacing) {
+            HStack(spacing: inlineSpacing) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 5)
+                    RoundedRectangle(cornerRadius: iconCornerRadius)
                         .fill(tint.opacity(0.10))
                     Image(systemName: iconName)
-                        .font(DashboardStyle.metricIconFont)
+                        .font(isMicro ? DashboardStyle.bluetoothMicroLabelFont : DashboardStyle.metricIconFont)
                         .foregroundColor(tint)
                 }
-                .frame(width: 18, height: 18)
+                .frame(width: iconSize, height: iconSize)
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(device.displayName)
-                        .font(DashboardStyle.tinyLabelFont)
+                        .font(labelFont)
                         .foregroundColor(DashboardStyle.titleText)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.55)
+                        .minimumScaleFactor(isMicro ? 0.45 : 0.55)
                     Text(detailText)
-                        .font(DashboardStyle.tinyLabelFont)
+                        .font(labelFont)
                         .foregroundColor(DashboardStyle.secondaryText)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.62)
+                        .minimumScaleFactor(isMicro ? 0.45 : 0.62)
                 }
                 .layoutPriority(1)
 
                 Spacer(minLength: 0)
             }
 
-            HStack(spacing: 5) {
+            HStack(spacing: isMicro ? 2 : (isEmbedded ? 3 : 5)) {
                 Text(device.batteryText)
-                    .font(DashboardStyle.tinyLabelFont)
+                    .font(labelFont)
                     .foregroundColor(device.batteryPct == nil ? DashboardStyle.secondaryText : tint)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.52)
+                    .minimumScaleFactor(isMicro ? 0.45 : 0.52)
                     .monospacedDigit()
 
                 GeometryReader { geo in
@@ -1153,18 +1352,22 @@ private struct BluetoothDeviceTile: View {
                             .frame(width: geo.size.width * pct)
                     }
                 }
-                .frame(height: 4)
+                .frame(height: barHeight)
                 .opacity(device.batteryPct == nil ? 0.35 : 1)
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 5)
-        .frame(maxWidth: .infinity, minHeight: DashboardStyle.bluetoothTileHeight, alignment: .leading)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, verticalPadding)
+        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
-                .fill(DashboardStyle.tileFill)
-                .overlay(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
-                    .stroke(DashboardStyle.tileStroke, lineWidth: 0.7))
+            Group {
+                if !isEmbedded {
+                    RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                        .fill(DashboardStyle.tileFill)
+                        .overlay(RoundedRectangle(cornerRadius: DashboardStyle.compactRadius)
+                            .stroke(DashboardStyle.tileStroke, lineWidth: 0.7))
+                }
+            }
         )
     }
 }
@@ -1304,13 +1507,16 @@ private struct CodexPlanMetricCard: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.58)
                 Text(planBadgeText)
-                    .font(DashboardStyle.badgeFont)
+                    .font(DashboardStyle.apiUsageFont)
                     .foregroundColor(DashboardStyle.accentBlue)
                     .lineLimit(1)
-                    .padding(.horizontal, 5)
-                    .frame(height: 14)
-                    .background(DashboardStyle.softBlueFill)
-                    .clipShape(Capsule())
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, 6)
+                    .frame(height: 12)
+                    .background(
+                        Capsule()
+                            .fill(DashboardStyle.softBlueFill)
+                    )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1318,6 +1524,158 @@ private struct CodexPlanMetricCard: View {
         .padding(.vertical, DashboardStyle.topCardPadding)
         .frame(maxWidth: .infinity, minHeight: DashboardStyle.topCardHeight)
         .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+        .help("Codex \(planBadgeText) · \(snapshot.codexTodayTokensText)")
+    }
+}
+
+private struct SeedanceAPIUsageBarCard: View {
+    let snapshot: CompactStatusSnapshot
+
+    private var clientText: String {
+        let trimmed = snapshot.seedanceAPIClientName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || trimmed == "Seedance" ? "Seedance API" : trimmed
+    }
+
+    private var titleText: String {
+        "Seedance API"
+    }
+
+    private var todayText: String {
+        snapshot.seedanceAPITodayCostText
+            .replacingOccurrences(of: "今日 ", with: "")
+    }
+
+    private var periodText: String {
+        snapshot.seedanceAPIPeriodCostText
+            .replacingOccurrences(of: "7日 ", with: "")
+    }
+
+    private var detailText: String {
+        snapshot.seedanceAPIBalanceText
+    }
+
+    private var helpText: String {
+        "\(clientText) · \(snapshot.seedanceAPITodayCostText) · \(snapshot.seedanceAPIPeriodCostText) · \(snapshot.seedanceAPIBalanceText) · \(snapshot.seedanceAPIBillingRows) 条扣费"
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ZStack {
+                Circle().fill(DashboardStyle.accentOrange.opacity(0.12))
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.system(size: 12, weight: .heavy))
+                    .foregroundColor(DashboardStyle.accentOrange)
+            }
+            .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(titleText)
+                    .font(.system(size: 10.5, weight: .heavy, design: .rounded))
+                    .foregroundColor(DashboardStyle.titleText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text("7日周期扣费")
+                    .font(DashboardStyle.usageDetailFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                    .lineLimit(1)
+                Text(detailText)
+                    .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                    .foregroundColor(DashboardStyle.warningText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+            }
+            .frame(width: 78, alignment: .leading)
+
+            SeedanceCostBarChart(values: snapshot.seedanceAPIDailyCosts,
+                                 active: snapshot.seedanceAPIUsageAvailable)
+                .frame(maxWidth: .infinity)
+
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(todayText)
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundColor(snapshot.seedanceAPIUsageAvailable ? DashboardStyle.titleText : DashboardStyle.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                Text("今日")
+                    .font(DashboardStyle.usageDetailFont)
+                    .foregroundColor(DashboardStyle.secondaryText)
+                Text(periodText)
+                    .font(.system(size: 8.2, weight: .heavy, design: .rounded))
+                    .foregroundColor(DashboardStyle.accentOrange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.64)
+            }
+            .frame(width: 54, alignment: .trailing)
+        }
+        .padding(.horizontal, DashboardStyle.panelPaddingX)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+        .frame(height: 54)
+        .background(SoftPanelBackground(cornerRadius: DashboardStyle.panelRadius))
+        .help(helpText)
+    }
+}
+
+private struct SeedanceCostBarChart: View {
+    let values: [Double]
+    let active: Bool
+
+    private var displayValues: [Double] {
+        let sanitized = values.map { max(0, $0) }
+        if sanitized.count >= 7 { return Array(sanitized.suffix(7)) }
+        return Array(repeating: 0, count: 7 - sanitized.count) + sanitized
+    }
+
+    private var maxValue: Double {
+        max(displayValues.max() ?? 0, 0.01)
+    }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 3) {
+            ForEach(Array(displayValues.enumerated()), id: \.offset) { index, value in
+                SeedanceCostBar(value: value,
+                                maxValue: maxValue,
+                                isToday: index == displayValues.count - 1,
+                                active: active)
+            }
+        }
+        .frame(height: 31, alignment: .bottom)
+        .accessibilityLabel("Seedance API 最近 7 日消耗柱状图")
+    }
+}
+
+private struct SeedanceCostBar: View {
+    let value: Double
+    let maxValue: Double
+    let isToday: Bool
+    let active: Bool
+
+    private var ratio: CGFloat {
+        guard maxValue > 0 else { return 0 }
+        return CGFloat(min(1, max(0, value / maxValue)))
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let filledHeight = value <= 0 ? 2 : max(4, geo.size.height * ratio)
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(DashboardStyle.track.opacity(0.75))
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(barFill)
+                    .frame(height: filledHeight)
+            }
+        }
+        .frame(width: isToday ? 8 : 7)
+        .opacity(active ? 1 : 0.45)
+    }
+
+    private var barFill: LinearGradient {
+        LinearGradient(colors: isToday
+                       ? [DashboardStyle.accentOrange, DashboardStyle.accentCoral]
+                       : [DashboardStyle.accentYellow.opacity(0.95), DashboardStyle.accentOrange.opacity(0.78)],
+                       startPoint: .top,
+                       endPoint: .bottom)
     }
 }
 
